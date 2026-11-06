@@ -3,8 +3,8 @@
 class Board{
 
     public:
-        Board()
+        MakeBoard()
         {
-        //Block startBlock;
+            Block startBlock();
         }
 };

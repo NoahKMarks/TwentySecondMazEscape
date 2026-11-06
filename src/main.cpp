@@ -18,6 +18,7 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 #include <iostream>
 
 #include <vector>
+#include <unordered_map>
 
 #include "viewface.cpp"
 #include "block.cpp"
@@ -105,6 +106,54 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 	return displayFaces;
 }
 
+class Block{
+    private:
+        Block* back2;
+        Block* front3;
+        Block* left4;
+        Block* right1;
+        Block* bottom5;
+        Block* top0;
+
+    public:
+        Block()
+        {
+
+        }
+
+        int add_connection(Block from, Vector2 dir){
+            return 0
+        }
+};
+
+
+void makeMazeBoard(){
+    int steps_to_finish = 10;
+    Vector2 position = {0,0};
+    Vector2 direction = {0,1};
+    std::vector<Block> block_array;
+    std::unordered_map<Vector2, &Block> positions_to_blocks;
+    int block_num = 0;
+    Block& prev_block;
+    Block& new_block;
+    while (steps_to_finish > 0){
+        block_array.emplace_back()
+        new_block = &block_array[block_num];
+        block_num++;
+
+        new_block.add_connection(prev_block, direction);
+        positions_to_blocks[position] = newBlock;
+        prev_block = new_block;
+        //change direction (and maybe make it an enum or int instead of vector)
+        position = Vector2Add(position,direction);
+        steps_to_finish --
+        std::cout << position << "\n";
+    }
+    std::cout << "done \n";
+
+
+}
+
 
 int main ()
 {
@@ -122,7 +171,9 @@ int main ()
 	InitWindow(screenWidth, screenHeight, "Hello Raylib, This is noah");
 // points must be in counter clockwise order
 
-	std::vector<ViewFace> display_faces = generateDisplay(5);
+	//std::vector<ViewFace> display_faces = generateDisplay(5);
+	makeMazeBoard();
+
 
 	// game loop
 	while (!WindowShouldClose())		// run the loop until the user presses ESCAPE or presses the Close button on the window
