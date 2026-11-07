@@ -44,12 +44,12 @@ struct IntVector{
     bool operator==(const IntVector& other) const {
             return ((x == other.x) && (y == other.y)) ;
     }
-}
+};
 
 template<> struct std::hash<IntVector> {
     std::size_t operator()(IntVector const& s) const noexcept {
-        std::size_t h1 = std::hash<int>{}(s.x);
-        std::size_t h2 = std::hash<int>{}(s.y);
+        std::size_t x = std::hash<int>{}(s.x);
+        std::size_t y = std::hash<int>{}(s.y);
         return x ^ (y << 1); // or use boost::hash_combine (see Discussion) https://en.cppreference.com/w/Talk:cpp/utility/hash
     }
 };
@@ -60,7 +60,7 @@ std::ostream& operator<<(std::ostream& os, const Vector2& v) { //overload << so 
 }
 
 std::ostream& operator<<(std::ostream& Stream,const IntVector vec) {
-  Stream << "x: "<<vec.x<< " y: " << vec << "\n";
+  Stream << "x: "<<vec.x<< " y: " << vec.y << "\n";
   return Stream;
 }
 
@@ -157,11 +157,14 @@ class Block{
 
     public:
         int blockID;
-        Block()
-        {
-            back2 = nullptr;
-
-        }
+        Block():
+        back2(nullptr),
+        front3(nullptr),
+        left4(nullptr),
+        right1(nullptr),
+        bottom5(nullptr),
+        top0(nullptr)
+        {}
 
         int add_connection(Block from, IntVector dir){
             return 0;
@@ -170,27 +173,30 @@ class Block{
 
 
 void makeMazeBoard(){
-    int steps_to_finish = 10;
+    const int maze_steps = 10;
+    int steps_to_finish = maze_steps+1;
     IntVector position = {0, 0};
-    IntVector direction = {0, 0};
+    IntVector direction = {1, 0};
     std::vector<Block> block_array;
     std::unordered_map<IntVector, Block*> positions_to_blocks;
+
     int block_num = 0;
-    Block* prev_block;
+    Block* prev_block = nullptr;
     Block* new_block;
     while (steps_to_finish > 0){
         block_array.emplace_back();
-        new_block = *block_array[block_num];
+        new_block = &block_array[block_num];
         block_num++;
-
-        (*new_block).add_connection((*prev_block), direction);
+        if (prev_block != nullptr){
+            (*new_block).add_connection((*prev_block), direction);
+        }
         positions_to_blocks[position] = new_block;
+        std::cout << position << "\n";
         //positions_to_blocks.emplace(position, *new_block);
         prev_block = new_block;
         //change direction (and maybe make it an enum or int instead of vector)
         position = IntVector::addIntVector(position,direction);
         steps_to_finish --;
-        std::cout << position << "\n";
     }
     std::cout << "done \n";
 
@@ -208,8 +214,6 @@ int main ()
 
 	// Load a texture from the resources directory
 	Texture wabbit = LoadTexture("wabbit_alpha.png");
-
-
 
 	InitWindow(screenWidth, screenHeight, "Hello Raylib, This is noah");
 // points must be in counter clockwise order
