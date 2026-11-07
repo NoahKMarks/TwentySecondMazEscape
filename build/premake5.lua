@@ -172,7 +172,7 @@ if (downloadRaylib) then
         kind "ConsoleApp"
         location "../"
         targetdir "../bin/%{cfg.buildcfg}"
-        buildoptions { "-Wno-narrowing" }
+
         filter {"system:windows", "configurations:Release", "action:gmake*"}
             kind "WindowedApp"
             buildoptions { "-Wl,--subsystem,windows" }
@@ -188,22 +188,22 @@ if (downloadRaylib) then
 --          buildoptions { "-static" }
         filter{}
 
-        vpaths
+        vpaths 
         {
             ["Header Files/*"] = { "../src/**.h",  "../src/**.hpp"},
             ["Source Files/*"] = {"../src/**.c", "src/**.cpp"},
             ["Windows Resource Files/*"] = {"../src/**.rc", "../src/**.ico"},
             ["Game Resource Files/*"] = {"../resources/**"},
         }
-
+        
         files {"../src/**.c", "../src/**.cpp", "../src/**.h", "../src/**.hpp"}
-
+        
         filter {"system:windows", "action:vs*"}
             files {"../src/*.rc", "../src/*.ico"}
             files {"../resources/**"}
 
         filter{}
-
+        
         includedirs { "../src" }
         includedirs { "../include" }
 
@@ -242,11 +242,11 @@ if (downloadRaylib) then
             links {"OpenGL.framework", "Cocoa.framework", "IOKit.framework", "CoreFoundation.framework", "CoreAudio.framework", "CoreVideo.framework", "AudioToolbox.framework"}
 
         filter{}
-
+        
 
     project "raylib"
         kind "StaticLib"
-
+    
         platform_defines()
 
         location "../"

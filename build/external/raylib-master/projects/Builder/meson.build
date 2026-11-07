@@ -15,7 +15,7 @@ raylib_dep = cc.find_library('raylib', required : false)
 
 # List your source files here
 source_c = [
-  'src/main.cpp',
+  'src/main.c',
 ]
 
 # Build executable

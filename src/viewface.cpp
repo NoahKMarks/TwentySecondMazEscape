@@ -33,7 +33,7 @@ class ViewFace{
 
         void renderViewFace(){
             Color finalCol({
-                (unsigned char)(std::clamp(color.r*lightMult,0.0f,255.0f)),
+                (unsigned char)(std::clamp(color.r*lightMult,0.0f,255.0f)),//raylib does have a clamp function
                 (unsigned char)(std::clamp(color.g*lightMult,0.0f,255.0f)),
                 (unsigned char)(std::clamp(color.b*lightMult,0.0f,255.0f)),
                 color.a

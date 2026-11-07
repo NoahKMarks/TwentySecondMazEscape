@@ -1,10 +1,12 @@
+/*
 #include "block.cpp"
 
 class Board{
 
     public:
-        MakeBoard()
+        void MakeBoard()
         {
             Block startBlock();
         }
 };
+*/

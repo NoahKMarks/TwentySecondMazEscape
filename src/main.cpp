@@ -11,23 +11,58 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 //./src/resource_dir.h
 #include "raylib.h"
 #include "raymath.h"
-#include "resource_dir.h"	// utility header for SearchAndSetResourceDir
+//#include "resource_dir.h"	// utility header for SearchAndSetResourceDir
 //#include <Color.hpp>
 //#include "stdafx.h"
 #include <string>
 #include <iostream>
 
 #include <vector>
+#include <map>
 #include <unordered_map>
 
 #include "viewface.cpp"
 #include "block.cpp"
 #include "board.cpp"
 
+struct IntVector{
+    int x,y;
+
+    IntVector(int _x, int _y)
+    :
+    x(_x),
+    y(_y)
+    {}
+
+    static IntVector addIntVector(IntVector v1,IntVector v2){
+        IntVector result = {v1.x + v2.x, v1.y+v2.y};
+        return result;
+    }
+    //void displayIntVector(){
+    //    std::cout << "x: "<<this.x<< " y: " << this.y << "\n";
+    //}
+    bool operator==(const IntVector& other) const {
+            return ((x == other.x) && (y == other.y)) ;
+    }
+}
+
+template<> struct std::hash<IntVector> {
+    std::size_t operator()(IntVector const& s) const noexcept {
+        std::size_t h1 = std::hash<int>{}(s.x);
+        std::size_t h2 = std::hash<int>{}(s.y);
+        return x ^ (y << 1); // or use boost::hash_combine (see Discussion) https://en.cppreference.com/w/Talk:cpp/utility/hash
+    }
+};
+
+
 std::ostream& operator<<(std::ostream& os, const Vector2& v) { //overload << so it can print Vector2
     return os << "(" << v.x << ", " << v.y << ")";
 }
 
+std::ostream& operator<<(std::ostream& Stream,const IntVector vec) {
+  Stream << "x: "<<vec.x<< " y: " << vec << "\n";
+  return Stream;
+}
 
 const int screenWidth = 900;
 const int screenHeight = 600;
@@ -106,7 +141,12 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 	return displayFaces;
 }
 
+
 class Block{
+    bool operator==(const Block& other) const {
+            return blockID == other.blockID;
+    }
+
     private:
         Block* back2;
         Block* front3;
@@ -116,37 +156,40 @@ class Block{
         Block* top0;
 
     public:
+        int blockID;
         Block()
         {
+            back2 = nullptr;
 
         }
 
-        int add_connection(Block from, Vector2 dir){
-            return 0
+        int add_connection(Block from, IntVector dir){
+            return 0;
         }
 };
 
 
 void makeMazeBoard(){
     int steps_to_finish = 10;
-    Vector2 position = {0,0};
-    Vector2 direction = {0,1};
+    IntVector position = {0, 0};
+    IntVector direction = {0, 0};
     std::vector<Block> block_array;
-    std::unordered_map<Vector2, &Block> positions_to_blocks;
+    std::unordered_map<IntVector, Block*> positions_to_blocks;
     int block_num = 0;
-    Block& prev_block;
-    Block& new_block;
+    Block* prev_block;
+    Block* new_block;
     while (steps_to_finish > 0){
-        block_array.emplace_back()
-        new_block = &block_array[block_num];
+        block_array.emplace_back();
+        new_block = *block_array[block_num];
         block_num++;
 
-        new_block.add_connection(prev_block, direction);
-        positions_to_blocks[position] = newBlock;
+        (*new_block).add_connection((*prev_block), direction);
+        positions_to_blocks[position] = new_block;
+        //positions_to_blocks.emplace(position, *new_block);
         prev_block = new_block;
         //change direction (and maybe make it an enum or int instead of vector)
-        position = Vector2Add(position,direction);
-        steps_to_finish --
+        position = IntVector::addIntVector(position,direction);
+        steps_to_finish --;
         std::cout << position << "\n";
     }
     std::cout << "done \n";
@@ -161,7 +204,7 @@ int main ()
 	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
 
 	// Utility function from resource_dir.h to find the resources folder and set it as the current working directory so we can load from it
-	SearchAndSetResourceDir("resources");
+	//SearchAndSetResourceDir("resources");
 
 	// Load a texture from the resources directory
 	Texture wabbit = LoadTexture("wabbit_alpha.png");
@@ -171,7 +214,7 @@ int main ()
 	InitWindow(screenWidth, screenHeight, "Hello Raylib, This is noah");
 // points must be in counter clockwise order
 
-	//std::vector<ViewFace> display_faces = generateDisplay(5);
+	std::vector<ViewFace> display_faces = generateDisplay(5);
 	makeMazeBoard();
 
 

@@ -91,8 +91,8 @@ obj/x64/Debug/mazescape/main.o: src/main.cpp /usr/include/stdc-predef.h \
  /usr/include/c++/13/tr1/modified_bessel_func.tcc \
  /usr/include/c++/13/tr1/poly_hermite.tcc \
  /usr/include/c++/13/tr1/poly_laguerre.tcc \
- /usr/include/c++/13/tr1/riemann_zeta.tcc src/resource_dir.h \
- /usr/include/c++/13/string /usr/include/c++/13/bits/stringfwd.h \
+ /usr/include/c++/13/tr1/riemann_zeta.tcc /usr/include/c++/13/string \
+ /usr/include/c++/13/bits/stringfwd.h \
  /usr/include/c++/13/bits/memoryfwd.h \
  /usr/include/c++/13/bits/char_traits.h \
  /usr/include/c++/13/bits/postypes.h /usr/include/c++/13/cwchar \
@@ -182,7 +182,17 @@ obj/x64/Debug/mazescape/main.o: src/main.cpp /usr/include/stdc-predef.h \
  /usr/include/c++/13/bits/stl_uninitialized.h \
  /usr/include/c++/13/bits/stl_vector.h \
  /usr/include/c++/13/bits/stl_bvector.h \
- /usr/include/c++/13/bits/vector.tcc src/viewface.cpp \
+ /usr/include/c++/13/bits/vector.tcc /usr/include/c++/13/map \
+ /usr/include/c++/13/bits/stl_tree.h \
+ /usr/include/c++/13/ext/aligned_buffer.h \
+ /usr/include/c++/13/bits/node_handle.h \
+ /usr/include/c++/13/bits/stl_map.h \
+ /usr/include/c++/13/bits/stl_multimap.h \
+ /usr/include/c++/13/bits/erase_if.h /usr/include/c++/13/unordered_map \
+ /usr/include/c++/13/bits/unordered_map.h \
+ /usr/include/c++/13/bits/hashtable.h \
+ /usr/include/c++/13/bits/hashtable_policy.h \
+ /usr/include/c++/13/bits/enable_special_members.h src/viewface.cpp \
  /usr/include/c++/13/random /usr/include/c++/13/cstdint \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
@@ -216,15 +226,7 @@ obj/x64/Debug/mazescape/main.o: src/main.cpp /usr/include/stdc-predef.h \
  /usr/include/c++/13/bits/ranges_algobase.h \
  /usr/include/c++/13/pstl/glue_algorithm_defs.h \
  /usr/include/c++/13/bitset /usr/include/c++/13/functional \
- /usr/include/c++/13/bits/std_function.h \
- /usr/include/c++/13/unordered_map \
- /usr/include/c++/13/bits/unordered_map.h \
- /usr/include/c++/13/bits/hashtable.h \
- /usr/include/c++/13/bits/hashtable_policy.h \
- /usr/include/c++/13/ext/aligned_buffer.h \
- /usr/include/c++/13/bits/enable_special_members.h \
- /usr/include/c++/13/bits/node_handle.h \
- /usr/include/c++/13/bits/erase_if.h /usr/include/c++/13/array \
+ /usr/include/c++/13/bits/std_function.h /usr/include/c++/13/array \
  /usr/include/c++/13/iterator /usr/include/c++/13/bits/stream_iterator.h \
  /usr/include/c++/13/memory \
  /usr/include/c++/13/bits/stl_raw_storage_iter.h \
@@ -306,11 +308,8 @@ obj/x64/Debug/mazescape/main.o: src/main.cpp /usr/include/stdc-predef.h \
  /usr/include/c++/13/bits/locale_conv.h \
  /usr/include/c++/13/bits/quoted_string.h /usr/include/c++/13/list \
  /usr/include/c++/13/bits/stl_list.h /usr/include/c++/13/bits/list.tcc \
- /usr/include/c++/13/map /usr/include/c++/13/bits/stl_tree.h \
- /usr/include/c++/13/bits/stl_map.h \
- /usr/include/c++/13/bits/stl_multimap.h /usr/include/c++/13/queue \
- /usr/include/c++/13/bits/stl_queue.h /usr/include/c++/13/set \
- /usr/include/c++/13/bits/stl_set.h \
+ /usr/include/c++/13/queue /usr/include/c++/13/bits/stl_queue.h \
+ /usr/include/c++/13/set /usr/include/c++/13/bits/stl_set.h \
  /usr/include/c++/13/bits/stl_multiset.h /usr/include/c++/13/stack \
  /usr/include/c++/13/bits/stl_stack.h /usr/include/c++/13/valarray \
  /usr/include/c++/13/bits/valarray_array.h \
@@ -461,7 +460,6 @@ build/external/raylib-master/src/raymath.h:
 /usr/include/c++/13/tr1/poly_hermite.tcc:
 /usr/include/c++/13/tr1/poly_laguerre.tcc:
 /usr/include/c++/13/tr1/riemann_zeta.tcc:
-src/resource_dir.h:
 /usr/include/c++/13/string:
 /usr/include/c++/13/bits/stringfwd.h:
 /usr/include/c++/13/bits/memoryfwd.h:
@@ -581,6 +579,18 @@ src/resource_dir.h:
 /usr/include/c++/13/bits/stl_vector.h:
 /usr/include/c++/13/bits/stl_bvector.h:
 /usr/include/c++/13/bits/vector.tcc:
+/usr/include/c++/13/map:
+/usr/include/c++/13/bits/stl_tree.h:
+/usr/include/c++/13/ext/aligned_buffer.h:
+/usr/include/c++/13/bits/node_handle.h:
+/usr/include/c++/13/bits/stl_map.h:
+/usr/include/c++/13/bits/stl_multimap.h:
+/usr/include/c++/13/bits/erase_if.h:
+/usr/include/c++/13/unordered_map:
+/usr/include/c++/13/bits/unordered_map.h:
+/usr/include/c++/13/bits/hashtable.h:
+/usr/include/c++/13/bits/hashtable_policy.h:
+/usr/include/c++/13/bits/enable_special_members.h:
 src/viewface.cpp:
 /usr/include/c++/13/random:
 /usr/include/c++/13/cstdint:
@@ -626,14 +636,6 @@ src/viewface.cpp:
 /usr/include/c++/13/bitset:
 /usr/include/c++/13/functional:
 /usr/include/c++/13/bits/std_function.h:
-/usr/include/c++/13/unordered_map:
-/usr/include/c++/13/bits/unordered_map.h:
-/usr/include/c++/13/bits/hashtable.h:
-/usr/include/c++/13/bits/hashtable_policy.h:
-/usr/include/c++/13/ext/aligned_buffer.h:
-/usr/include/c++/13/bits/enable_special_members.h:
-/usr/include/c++/13/bits/node_handle.h:
-/usr/include/c++/13/bits/erase_if.h:
 /usr/include/c++/13/array:
 /usr/include/c++/13/iterator:
 /usr/include/c++/13/bits/stream_iterator.h:
@@ -744,10 +746,6 @@ src/viewface.cpp:
 /usr/include/c++/13/list:
 /usr/include/c++/13/bits/stl_list.h:
 /usr/include/c++/13/bits/list.tcc:
-/usr/include/c++/13/map:
-/usr/include/c++/13/bits/stl_tree.h:
-/usr/include/c++/13/bits/stl_map.h:
-/usr/include/c++/13/bits/stl_multimap.h:
 /usr/include/c++/13/queue:
 /usr/include/c++/13/bits/stl_queue.h:
 /usr/include/c++/13/set:
