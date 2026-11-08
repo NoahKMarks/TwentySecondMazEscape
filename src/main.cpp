@@ -6,13 +6,10 @@ Use this as a starting point or replace it with your code.
 by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit https://creativecommons.org/publicdomain/zero/1.0/
 
 */
-//./build/external/raylib-master/src/raylib.h
-//./build/external/raylib-master/src/raymath.h
-//./src/resource_dir.h
+
 #include "raylib.h"
 #include "raymath.h"
 //#include "resource_dir.h"	// utility header for SearchAndSetResourceDir
-//#include <Color.hpp>
 //#include "stdafx.h"
 #include <string>
 #include <iostream>
@@ -37,6 +34,11 @@ struct IntVector{
     static IntVector addIntVector(IntVector v1,IntVector v2){
         IntVector result = {v1.x + v2.x, v1.y+v2.y};
         return result;
+    }
+    void displayVector(Vector2 offset, float scale){
+        Vector2 converted(x*scale, y*scale);
+        Vector2 drawpos = Vector2Add(offset, converted);
+        DrawCircleV(drawpos, scale, RED);
     }
     //void displayIntVector(){
     //    std::cout << "x: "<<this.x<< " y: " << this.y << "\n";
@@ -157,13 +159,17 @@ class Block{
 
     public:
         int blockID;
+        IntVector pos;
+
         Block():
-        back2(nullptr),
-        front3(nullptr),
-        left4(nullptr),
-        right1(nullptr),
-        bottom5(nullptr),
-        top0(nullptr)
+            back2(nullptr),
+            front3(nullptr),
+            left4(nullptr),
+            right1(nullptr),
+            bottom5(nullptr),
+            top0(nullptr),
+            pos(0,0)
+
         {}
 
         int add_connection(Block from, IntVector dir){
@@ -186,19 +192,26 @@ void makeMazeBoard(){
     while (steps_to_finish > 0){
         block_array.emplace_back();
         new_block = &block_array[block_num];
+        (*new_block).pos = position;
+
         block_num++;
         if (prev_block != nullptr){
             (*new_block).add_connection((*prev_block), direction);
+            //(*prev_block).add_connection((*new_block), -direction);
         }
         positions_to_blocks[position] = new_block;
-        std::cout << position << "\n";
+        //std::cout << position << "\n";
         //positions_to_blocks.emplace(position, *new_block);
         prev_block = new_block;
         //change direction (and maybe make it an enum or int instead of vector)
         position = IntVector::addIntVector(position,direction);
         steps_to_finish --;
     }
-    std::cout << "done \n";
+    for (const Block& block : block_array){
+        std::cout << " pos " << block.pos << "\n";
+    }
+
+        std::cout << "done \n";
 
 
 }
