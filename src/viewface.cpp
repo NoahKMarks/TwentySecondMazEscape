@@ -24,10 +24,10 @@ class ViewFace{
 
             std::uniform_int_distribution<std::mt19937::result_type> dist(190,215);
             color =  {
-                dist(r1),
-                dist(r2),
-                dist(r3),
-                255
+                (unsigned char)(dist(r1)),
+                (unsigned char)(dist(r2)),
+                (unsigned char)(dist(r3)),
+                (unsigned char)(255)
             };
         }
 
