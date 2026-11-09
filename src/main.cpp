@@ -22,6 +22,16 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 #include "block.cpp"
 #include "board.cpp"
 
+const int screenWidth = 900;
+const int screenHeight = 600;
+const Vector2 screenCentre((float)screenWidth/2, (float)screenHeight/2);
+
+const int block_separation = 1.0; //3d separation between each grid cell in the world
+const float light_factor = 3.0; //stops further cells getting dark too quickly; might be similar to where light starts dropping off
+const float light_scale = block_separation/light_factor;
+
+const float map_scale = 30;
+
 struct IntVector{
     int x,y;
 
@@ -35,17 +45,19 @@ struct IntVector{
         IntVector result = {v1.x + v2.x, v1.y+v2.y};
         return result;
     }
-    void displayVector(Vector2 offset, float scale){
-        Vector2 converted(x*scale, y*scale);
+    void displayVector(float size=1, Vector2 offset = screenCentre){
+        Vector2 converted(x*map_scale, y*map_scale);
         Vector2 drawpos = Vector2Add(offset, converted);
-        DrawCircleV(drawpos, scale, RED);
+        DrawCircleV(drawpos, size*map_scale/2, WHITE);
     }
-    //void displayIntVector(){
-    //    std::cout << "x: "<<this.x<< " y: " << this.y << "\n";
-    //}
+    
     bool operator==(const IntVector& other) const {
             return ((x == other.x) && (y == other.y)) ;
     }
+    
+    static IntVector rotateVector(IntVector v, int turns){
+		return v;
+	}
 };
 
 template<> struct std::hash<IntVector> {
@@ -65,13 +77,6 @@ std::ostream& operator<<(std::ostream& Stream,const IntVector vec) {
   Stream << "x: "<<vec.x<< " y: " << vec.y << "\n";
   return Stream;
 }
-
-const int screenWidth = 900;
-const int screenHeight = 600;
-
-const int block_separation = 1.0; //3d separation between each grid cell in the world
-const float light_factor = 3.0; //stops further cells getting dark too quickly; might be similar to where light starts dropping off
-const float light_scale = block_separation/light_factor;
 
 void drawLinesFromPoints(const Vector2 (&points)[4]){
     for (int i = 0; i<4; i++){
@@ -97,12 +102,10 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 	// starts at most outer points and goes in so loop backwards
 	std::vector<Vector2> displayPoints(total_points);
 	for (int i=ring_count-1; i>=0; i--){
-
 		displayPoints[i*4] = {-display_radius/(i+1),display_radius/(i+1)};
 		displayPoints[i*4+1] = {display_radius/(i+1),display_radius/(i+1)};
 		displayPoints[i*4+2] = {display_radius/(i+1),-display_radius/(i+1)};
         displayPoints[i*4+3] = {-display_radius/(i+1),-display_radius/(i+1)};
-
 	}
 
 	for (int i=0; i<total_points; i++){//shift points to center
@@ -111,7 +114,6 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 
 	std::vector<ViewFace> displayFaces; //Array Of Faces that will be returned
 	displayFaces.reserve(face_count); // Save contiguous Memory for when objects are created
-
 
 	//This Loop makes faces from the point and adds new objects to the array
 	for (int i=0; i<face_count-1; i++){
@@ -178,7 +180,7 @@ class Block{
 };
 
 
-void makeMazeBoard(){
+std::vector<Block> makeMazeBoard(){
     const int maze_steps = 10;
     int steps_to_finish = maze_steps+1;
     IntVector position = {0, 0};
@@ -208,14 +210,36 @@ void makeMazeBoard(){
         steps_to_finish --;
     }
     for (const Block& block : block_array){
-        std::cout << " pos " << block.pos << "\n";
+        //std::cout << " pos " << block.pos << "\n";
+		;
     }
 
         std::cout << "done \n";
-
+	return block_array;
 
 }
 
+class Player{
+  private:
+	IntVector direction;
+	IntVector position;
+  public:
+	Player()
+	:
+		direction{0,1},
+		position{0,0}
+	{}
+	void renderPlayer(Vector2 draw_offset = screenCentre){
+		
+		Vector2 scaledPos(position.x*map_scale, position.y*map_scale);
+        Vector2 drawpos = Vector2Add(draw_offset, scaledPos);
+        DrawCircleV(drawpos, 0.75*map_scale/2, RED);
+        
+        Vector2 headOffset(direction.x*map_scale, direction.y*map_scale/2);
+		Vector2 head_pos = Vector2Add(drawpos,headOffset);
+		DrawCircleV(head_pos, 0.5*map_scale/2, PURPLE);
+	}
+};
 
 int main ()
 {
@@ -228,12 +252,19 @@ int main ()
 	// Load a texture from the resources directory
 	Texture wabbit = LoadTexture("wabbit_alpha.png");
 
+	//Make Window
 	InitWindow(screenWidth, screenHeight, "Hello Raylib, This is noah");
-// points must be in counter clockwise order
 
+
+	//Initialise main variables
 	std::vector<ViewFace> display_faces = generateDisplay(5);
-	makeMazeBoard();
-
+	std::vector<Block> mazeBoardBlocks = makeMazeBoard();
+	Player player;
+	std::cout<<"hello \n";
+	//std::cout<<"there \n";
+	
+	Vector2 projectionOffset{10,10};
+	Vector2 mapOffset{500,10};
 
 	// game loop
 	while (!WindowShouldClose())		// run the loop until the user presses ESCAPE or presses the Close button on the window
@@ -242,7 +273,7 @@ int main ()
 		BeginDrawing();
 
 		// Setup the back buffer for drawing (clear color and depth buffers)
-		ClearBackground(MAGENTA);
+		ClearBackground(GREEN);
 
 		// draw some text using the default font
 		//DrawText("Hello Raylib, Hello Noah", 200,200,20,LIME);
@@ -253,6 +284,10 @@ int main ()
 		for(int i=0; i < display_faces.size(); i++){
             display_faces[i].renderViewFace();
         }
+        for(int i=0; i < mazeBoardBlocks.size(); i++){
+            mazeBoardBlocks[i].pos.displayVector();
+        }
+        player.renderPlayer();
 
 
 		// end the frame and get ready for the next one  (display frame, poll input, etc...)
