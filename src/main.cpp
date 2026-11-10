@@ -13,6 +13,8 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 //#include "stdafx.h"
 #include <string>
 #include <iostream>
+#include <random>
+
 
 #include <vector>
 #include <map>
@@ -50,14 +52,21 @@ struct IntVector{
         Vector2 drawpos = Vector2Add(offset, converted);
         DrawCircleV(drawpos, size*map_scale/2, WHITE);
     }
-    
+
     bool operator==(const IntVector& other) const {
             return ((x == other.x) && (y == other.y)) ;
     }
-    
-    static IntVector rotateVector(IntVector v, int turns){
-		return v;
-	}
+
+    static IntVector rotateVector(IntVector v, bool anticlockwise){
+      if (anticlockwise){
+        IntVector result(v.y,-v.x);
+        return result;
+      }
+      else{
+        IntVector result(-v.y,v.x);
+        return result;
+      }
+    }
 };
 
 template<> struct std::hash<IntVector> {
@@ -68,6 +77,20 @@ template<> struct std::hash<IntVector> {
     }
 };
 
+int randomInteger(int min = 0, int max = 10){
+	std::random_device dev;
+    std::mt19937 randomNum(dev());        
+    std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
+    return dist(randomNum);
+}
+
+bool randomBool(){
+	std::random_device dev;
+    std::mt19937 randomNum(dev());        
+    std::uniform_int_distribution<std::mt19937::result_type> dist(0, 1);
+    int result = dist(randomNum);
+    return ((result==1)? true : false);
+}
 
 std::ostream& operator<<(std::ostream& os, const Vector2& v) { //overload << so it can print Vector2
     return os << "(" << v.x << ", " << v.y << ")";
@@ -180,8 +203,7 @@ class Block{
 };
 
 
-std::vector<Block> makeMazeBoard(){
-    const int maze_steps = 10;
+std::vector<Block> makeMazeBoard(const int maze_steps = 10){
     int steps_to_finish = maze_steps+1;
     IntVector position = {0, 0};
     IntVector direction = {1, 0};
@@ -206,6 +228,16 @@ std::vector<Block> makeMazeBoard(){
         //positions_to_blocks.emplace(position, *new_block);
         prev_block = new_block;
         //change direction (and maybe make it an enum or int instead of vector)
+        bool shouldTurn = randomBool();
+        if (shouldTurn){
+			bool isRight = randomBool();
+			if (isRight){
+				direction = IntVector::rotateVector(direction,false);
+			}
+			else{
+			direction = IntVector::rotateVector(direction,true);
+			}	
+		}
         position = IntVector::addIntVector(position,direction);
         steps_to_finish --;
     }
@@ -230,11 +262,11 @@ class Player{
 		position{0,0}
 	{}
 	void renderPlayer(Vector2 draw_offset = screenCentre){
-		
+
 		Vector2 scaledPos(position.x*map_scale, position.y*map_scale);
         Vector2 drawpos = Vector2Add(draw_offset, scaledPos);
         DrawCircleV(drawpos, 0.75*map_scale/2, RED);
-        
+
         Vector2 headOffset(direction.x*map_scale, direction.y*map_scale/2);
 		Vector2 head_pos = Vector2Add(drawpos,headOffset);
 		DrawCircleV(head_pos, 0.5*map_scale/2, PURPLE);
@@ -258,11 +290,11 @@ int main ()
 
 	//Initialise main variables
 	std::vector<ViewFace> display_faces = generateDisplay(5);
-	std::vector<Block> mazeBoardBlocks = makeMazeBoard();
+	std::vector<Block> mazeBoardBlocks = makeMazeBoard(20);
 	Player player;
 	std::cout<<"hello \n";
 	//std::cout<<"there \n";
-	
+
 	Vector2 projectionOffset{10,10};
 	Vector2 mapOffset{500,10};
 
@@ -273,7 +305,7 @@ int main ()
 		BeginDrawing();
 
 		// Setup the back buffer for drawing (clear color and depth buffers)
-		ClearBackground(GREEN);
+		ClearBackground(SKYBLUE);
 
 		// draw some text using the default font
 		//DrawText("Hello Raylib, Hello Noah", 200,200,20,LIME);
@@ -281,7 +313,7 @@ int main ()
 		// draw our texture to the screen
 		//DrawTexture(wabbit, 800, 200, RED);
 
-		for(int i=0; i < display_faces.size(); i++){
+	for(int i=0; i < display_faces.size(); i++){
             display_faces[i].renderViewFace();
         }
         for(int i=0; i < mazeBoardBlocks.size(); i++){
