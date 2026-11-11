@@ -167,7 +167,37 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 
 	return displayFaces;
 }
+class Face{
+	private:
+		Block* next_block;
+		Color color;
+	
+	public:
+		Face()
+		:
+		next_block(nullptr)
+		{
+			std::random_device dev;
+            std::mt19937 r1(dev());
+            //std::mt19937 r2(dev());
+            ////std::mt19937 r3(dev());
 
+            std::uniform_int_distribution<std::mt19937::result_type> dist(150,250);
+            this.color =  {
+                (unsigned char)(dist(r1)),
+                (unsigned char)(200),
+                (unsigned char)(200),
+                (unsigned char)(255)
+            };
+		}
+		void setNextBlock(Block* to_block){
+			this.next_block = to_block;
+		}
+		
+		Block* getNextBlock(){
+			return next_block;
+		}
+};
 
 class Block{
     bool operator==(const Block& other) const {
@@ -175,30 +205,43 @@ class Block{
     }
 
     private:
-        Block* back2;
-        Block* front3;
-        Block* left4;
-        Block* right1;
-        Block* bottom5;
-        Block* top0;
+		std::unordered_map<IntVector, Face> direction_to_face;
+        
+        //Face back2;
+        //Face front3;
+        //Face left4;
+        //Face right1;
+        //Face bottom5;
+        //Face top0;
 
     public:
         int blockID;
         IntVector pos;
 
-        Block():
-            back2(nullptr),
-            front3(nullptr),
-            left4(nullptr),
-            right1(nullptr),
-            bottom5(nullptr),
-            top0(nullptr),
-            pos(0,0)
-
-        {}
+        Block()
+        :
+        pos(0,0)
+        
+        //    back2(nullptr),
+        //    front3(nullptr),
+        //    left4(nullptr),
+        //    right1(nullptr),
+        //    bottom5(nullptr),
+        //    top0(nullptr),
+        {
+			direction_to_face[IntVector{1,0}] = Face();
+			direction_to_face[IntVector{-1,0}] = Face();
+			direction_to_face[IntVector{0,1}] = Face();
+			direction_to_face[IntVector{0,-1}] = Face();
+			//direction_to_face[IntVector{0,0}] = Face();
+			//direction_to_face[IntVector{0,0}] = Face();        
+		}
 
         int add_connection(Block from, IntVector dir){
             return 0;
+        }
+        Face get_next_block(IntVector dir){
+			return direction_to_face[dir]; 
         }
 };
 

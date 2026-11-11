@@ -22,7 +22,7 @@ class ViewFace{
             std::mt19937 r2(dev());
             std::mt19937 r3(dev());
 
-            std::uniform_int_distribution<std::mt19937::result_type> dist(190,215);
+            std::uniform_int_distribution190<std::mt19937::result_type> dist(190,215);
             color =  {
                 (unsigned char)(dist(r1)),
                 (unsigned char)(dist(r2)),
