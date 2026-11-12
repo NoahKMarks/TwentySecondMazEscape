@@ -17,12 +17,12 @@ class ViewFace{
         lightMult(lightMultiplier)
         {
 
-            std::random_device dev;
+            std::random_device dev;// make static
             std::mt19937 r1(dev());
             std::mt19937 r2(dev());
             std::mt19937 r3(dev());
 
-            std::uniform_int_distribution190<std::mt19937::result_type> dist(190,215);
+            std::uniform_int_distribution<std::mt19937::result_type> dist(190,215); // make static
             color =  {
                 (unsigned char)(dist(r1)),
                 (unsigned char)(dist(r2)),

@@ -9,43 +9,43 @@ ifndef verbose
 endif
 
 ifeq ($(config),debug_x64)
-  TwentySecondMazEscape_config = debug_x64
+  mazescape_config = debug_x64
   raylib_config = debug_x64
 
 else ifeq ($(config),debug_x86)
-  TwentySecondMazEscape_config = debug_x86
+  mazescape_config = debug_x86
   raylib_config = debug_x86
 
 else ifeq ($(config),debug_arm64)
-  TwentySecondMazEscape_config = debug_arm64
+  mazescape_config = debug_arm64
   raylib_config = debug_arm64
 
 else ifeq ($(config),release_x64)
-  TwentySecondMazEscape_config = release_x64
+  mazescape_config = release_x64
   raylib_config = release_x64
 
 else ifeq ($(config),release_x86)
-  TwentySecondMazEscape_config = release_x86
+  mazescape_config = release_x86
   raylib_config = release_x86
 
 else ifeq ($(config),release_arm64)
-  TwentySecondMazEscape_config = release_arm64
+  mazescape_config = release_arm64
   raylib_config = release_arm64
 
 else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := TwentySecondMazEscape raylib
+PROJECTS := mazescape raylib
 
 .PHONY: all clean help $(PROJECTS) 
 
 all: $(PROJECTS)
 
-TwentySecondMazEscape: raylib
-ifneq (,$(TwentySecondMazEscape_config))
-	@echo "==== Building TwentySecondMazEscape ($(TwentySecondMazEscape_config)) ===="
-	@${MAKE} --no-print-directory -C . -f TwentySecondMazEscape.make config=$(TwentySecondMazEscape_config)
+mazescape: raylib
+ifneq (,$(mazescape_config))
+	@echo "==== Building mazescape ($(mazescape_config)) ===="
+	@${MAKE} --no-print-directory -C . -f mazescape.make config=$(mazescape_config)
 endif
 
 raylib:
@@ -55,7 +55,7 @@ ifneq (,$(raylib_config))
 endif
 
 clean:
-	@${MAKE} --no-print-directory -C . -f TwentySecondMazEscape.make clean
+	@${MAKE} --no-print-directory -C . -f mazescape.make clean
 	@${MAKE} --no-print-directory -C . -f raylib.make clean
 
 help:
@@ -72,7 +72,7 @@ help:
 	@echo "TARGETS:"
 	@echo "   all (default)"
 	@echo "   clean"
-	@echo "   TwentySecondMazEscape"
+	@echo "   mazescape"
 	@echo "   raylib"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"

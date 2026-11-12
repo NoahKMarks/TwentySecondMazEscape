@@ -34,17 +34,21 @@ const float light_scale = block_separation/light_factor;
 
 const float map_scale = 30;
 
-struct IntVector{
-    int x,y;
 
-    IntVector(int _x, int _y)
+std::random_device dev;
+
+struct IntVector{
+    int x,y,z;
+
+    IntVector(int _x, int _y, int _z)
     :
     x(_x),
-    y(_y)
+    y(_y),
+    z(_z)
     {}
 
     static IntVector addIntVector(IntVector v1,IntVector v2){
-        IntVector result = {v1.x + v2.x, v1.y+v2.y};
+        IntVector result = {v1.x + v2.x, v1.y+v2.y, v1.z+v2.z};
         return result;
     }
     void displayVector(float size=1, Vector2 offset = screenCentre){
@@ -54,16 +58,16 @@ struct IntVector{
     }
 
     bool operator==(const IntVector& other) const {
-            return ((x == other.x) && (y == other.y)) ;
+            return ((x == other.x) && (y == other.y) && (z == other.z));
     }
 
     static IntVector rotateVector(IntVector v, bool anticlockwise){
       if (anticlockwise){
-        IntVector result(v.y,-v.x);
+        IntVector result(v.y,-v.x,v.z);
         return result;
       }
       else{
-        IntVector result(-v.y,v.x);
+        IntVector result(-v.y,v.x,v.z);
         return result;
       }
     }
@@ -73,20 +77,21 @@ template<> struct std::hash<IntVector> {
     std::size_t operator()(IntVector const& s) const noexcept {
         std::size_t x = std::hash<int>{}(s.x);
         std::size_t y = std::hash<int>{}(s.y);
-        return x ^ (y << 1); // or use boost::hash_combine (see Discussion) https://en.cppreference.com/w/Talk:cpp/utility/hash
+        std::size_t z = std::hash<int>{}(s.z);
+        return z * x ^ (y << 1); // or use boost::hash_combine (see Discussion) https://en.cppreference.com/w/Talk:cpp/utility/hash
     }
 };
 
 int randomInteger(int min = 0, int max = 10){
-	std::random_device dev;
-    std::mt19937 randomNum(dev());        
+	//std::random_device dev;
+    std::mt19937 randomNum(dev());
     std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
     return dist(randomNum);
 }
 
 bool randomBool(){
-	std::random_device dev;
-    std::mt19937 randomNum(dev());        
+	//std::random_device dev;
+    std::mt19937 randomNum(dev());
     std::uniform_int_distribution<std::mt19937::result_type> dist(0, 1);
     int result = dist(randomNum);
     return ((result==1)? true : false);
@@ -167,46 +172,45 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 
 	return displayFaces;
 }
+
+
+class Block; //Forward declaration so face knows it exists and can point to it
 class Face{
 	private:
 		Block* next_block;
 		Color color;
-	
+
 	public:
 		Face()
 		:
 		next_block(nullptr)
 		{
-			std::random_device dev;
+			//std::random_device dev;
             std::mt19937 r1(dev());
             //std::mt19937 r2(dev());
             ////std::mt19937 r3(dev());
 
-            std::uniform_int_distribution<std::mt19937::result_type> dist(150,250);
-            this.color =  {
+            std::uniform_int_distribution<std::mt19937::result_type> dist(150,250);//make static
+            color =  {
                 (unsigned char)(dist(r1)),
-                (unsigned char)(200),
-                (unsigned char)(200),
+                (unsigned char)(10),
+                (unsigned char)(10),
                 (unsigned char)(255)
             };
 		}
 		void setNextBlock(Block* to_block){
-			this.next_block = to_block;
+			next_block = to_block;
 		}
-		
+
 		Block* getNextBlock(){
 			return next_block;
 		}
 };
 
 class Block{
-    bool operator==(const Block& other) const {
-            return blockID == other.blockID;
-    }
-
     private:
 		std::unordered_map<IntVector, Face> direction_to_face;
-        
+
         //Face back2;
         //Face front3;
         //Face left4;
@@ -218,10 +222,10 @@ class Block{
         int blockID;
         IntVector pos;
 
-        Block()
+        Block(int block_id)
         :
-        pos(0,0)
-        
+        pos(0,0,0),
+        blockID(block_id)
         //    back2(nullptr),
         //    front3(nullptr),
         //    left4(nullptr),
@@ -229,47 +233,60 @@ class Block{
         //    bottom5(nullptr),
         //    top0(nullptr),
         {
-			direction_to_face[IntVector{1,0}] = Face();
-			direction_to_face[IntVector{-1,0}] = Face();
-			direction_to_face[IntVector{0,1}] = Face();
-			direction_to_face[IntVector{0,-1}] = Face();
-			//direction_to_face[IntVector{0,0}] = Face();
-			//direction_to_face[IntVector{0,0}] = Face();        
+            direction_to_face.reserve(6);
+			//direction_to_face[IntVector{1,0,0}] = Face();
+			//direction_to_face[IntVector{-1,0,0}] = Face();
+			//direction_to_face[IntVector{0,1,0}] = Face();
+			//direction_to_face[IntVector{0,-1,0}] = Face();
+
+			//direction_to_face[IntVector{0,0,1}] = Face();
+			//direction_to_face[IntVector{0,0,-1}] = Face();
 		}
 
         int add_connection(Block from, IntVector dir){
             return 0;
         }
-        Face get_next_block(IntVector dir){
-			return direction_to_face[dir]; 
-        }
+        //Face get_next_block(IntVector dir){
+		//	return direction_to_face[dir];
+		//}
+		bool operator==(const Block& other) const {
+            return blockID == other.blockID;
+    }
 };
 
 
 std::vector<Block> makeMazeBoard(const int maze_steps = 10){
     int steps_to_finish = maze_steps+1;
-    IntVector position = {0, 0};
-    IntVector direction = {1, 0};
+    IntVector position = {0, 0, 0};
+    IntVector direction = {1, 0, 0};
+
+    int max_block_count = 20; // must be bigger than steps to finish
     std::vector<Block> block_array;
+    block_array.reserve(max_block_count);
+    //block_array.reserve(max_block_count);
+
     std::unordered_map<IntVector, Block*> positions_to_blocks;
 
     int block_num = 0;
     Block* prev_block = nullptr;
-    Block* new_block;
-    while (steps_to_finish > 0){
-        block_array.emplace_back();
+    Block* new_block = nullptr;
+    while (steps_to_finish > 0 and block_num < max_block_count){
+        prev_block = new_block;
+
+        block_array.emplace_back(block_num);//use block_num as its ID
         new_block = &block_array[block_num];
         (*new_block).pos = position;
 
         block_num++;
+
+        // connect blocks
         if (prev_block != nullptr){
             (*new_block).add_connection((*prev_block), direction);
             //(*prev_block).add_connection((*new_block), -direction);
         }
+        // add to dictionary
         positions_to_blocks[position] = new_block;
-        //std::cout << position << "\n";
-        //positions_to_blocks.emplace(position, *new_block);
-        prev_block = new_block;
+
         //change direction (and maybe make it an enum or int instead of vector)
         bool shouldTurn = randomBool();
         if (shouldTurn){
@@ -279,7 +296,7 @@ std::vector<Block> makeMazeBoard(const int maze_steps = 10){
 			}
 			else{
 			direction = IntVector::rotateVector(direction,true);
-			}	
+			}
 		}
         position = IntVector::addIntVector(position,direction);
         steps_to_finish --;
@@ -301,8 +318,8 @@ class Player{
   public:
 	Player()
 	:
-		direction{0,1},
-		position{0,0}
+		direction{0,1,0},
+		position{0,0,0}
 	{}
 	void renderPlayer(Vector2 draw_offset = screenCentre){
 
@@ -323,9 +340,6 @@ int main ()
 
 	// Utility function from resource_dir.h to find the resources folder and set it as the current working directory so we can load from it
 	//SearchAndSetResourceDir("resources");
-
-	// Load a texture from the resources directory
-	Texture wabbit = LoadTexture("wabbit_alpha.png");
 
 	//Make Window
 	InitWindow(screenWidth, screenHeight, "Hello Raylib, This is noah");
@@ -373,7 +387,7 @@ int main ()
 
 	// cleanup
 	// unload our texture so it can be cleaned up
-	UnloadTexture(wabbit);
+	//UnloadTexture(wabbit);
 
 	// destroy the window and cleanup the OpenGL context
 	CloseWindow();
