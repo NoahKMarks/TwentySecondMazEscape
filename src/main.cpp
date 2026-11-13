@@ -26,7 +26,7 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 
 const int screenWidth = 900;
 const int screenHeight = 600;
-const Vector2 screenCentre((float)screenWidth/2, (float)screenHeight/2);
+const Vector2 screenCentre{(float)screenWidth/2, (float)screenHeight/2};
 
 const int block_separation = 1.0; //3d separation between each grid cell in the world
 const float light_factor = 3.0; //stops further cells getting dark too quickly; might be similar to where light starts dropping off
@@ -34,8 +34,13 @@ const float light_scale = block_separation/light_factor;
 
 const float map_scale = 30;
 
+//maze genaration
+//
+const int maze_steps = 10;
 
-std::random_device dev;
+const int turn_rate = 3; //chance to make a turn in correct maze path per step
+const int portal_rate = 6; //chance to attempt to spawn a portal is 1/portal_rate
+
 
 struct IntVector{
     int x,y,z;
@@ -83,14 +88,14 @@ template<> struct std::hash<IntVector> {
 };
 
 int randomInteger(int min = 0, int max = 10){
-	//std::random_device dev;
+	std::random_device dev;
     std::mt19937 randomNum(dev());
     std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
     return dist(randomNum);
 }
 
 bool randomBool(){
-	//std::random_device dev;
+	std::random_device dev;
     std::mt19937 randomNum(dev());
     std::uniform_int_distribution<std::mt19937::result_type> dist(0, 1);
     int result = dist(randomNum);
@@ -185,10 +190,10 @@ class Face{
 		:
 		next_block(nullptr)
 		{
-			//std::random_device dev;
+			std::random_device dev;
             std::mt19937 r1(dev());
             //std::mt19937 r2(dev());
-            ////std::mt19937 r3(dev());
+            //std::mt19937 r3(dev());
 
             std::uniform_int_distribution<std::mt19937::result_type> dist(150,250);//make static
             color =  {
@@ -222,7 +227,7 @@ class Block{
         int blockID;
         IntVector pos;
 
-        Block(int block_id)
+        Block(int block_id = 0)
         :
         pos(0,0,0),
         blockID(block_id)
@@ -255,22 +260,22 @@ class Block{
 };
 
 
-std::vector<Block> makeMazeBoard(const int maze_steps = 10){
+std::vector<Block> makeMazeBoard(){
     int steps_to_finish = maze_steps+1;
-    IntVector position = {0, 0, 0};
+    IntVector position = {0, 0, 0}; //Just used for visualisation Not actual game
     IntVector direction = {1, 0, 0};
 
-    int max_block_count = 20; // must be bigger than steps to finish
+    //int max_block_count = 20; // must be bigger than steps to finish
     std::vector<Block> block_array;
-    block_array.reserve(max_block_count);
+    block_array.reserve(steps_to_finish);
     //block_array.reserve(max_block_count);
 
-    std::unordered_map<IntVector, Block*> positions_to_blocks;
+    //std::unordered_map<IntVector, Block*> positions_to_blocks;
 
     int block_num = 0;
     Block* prev_block = nullptr;
     Block* new_block = nullptr;
-    while (steps_to_finish > 0 and block_num < max_block_count){
+    while (steps_to_finish > 0){
         prev_block = new_block;
 
         block_array.emplace_back(block_num);//use block_num as its ID
@@ -284,8 +289,14 @@ std::vector<Block> makeMazeBoard(const int maze_steps = 10){
             (*new_block).add_connection((*prev_block), direction);
             //(*prev_block).add_connection((*new_block), -direction);
         }
+
+        //RANDOMLY ADD PORTAL ON ONE SIDE TO PREVIOUS BLOCK
+        if (randomInteger(0, portal_rate)==0){
+            //IntVector portal_dir = IntVector.rotateVector();
+            ;//make a portal (ie connection to previous block)
+        }
         // add to dictionary
-        positions_to_blocks[position] = new_block;
+        //positions_to_blocks[position] = new_block;
 
         //change direction (and maybe make it an enum or int instead of vector)
         bool shouldTurn = randomBool();
@@ -346,9 +357,9 @@ int main ()
 
 
 	//Initialise main variables
-	std::vector<ViewFace> display_faces = generateDisplay(5);
-	std::vector<Block> mazeBoardBlocks = makeMazeBoard(20);
-	Player player;
+	//std::vector<ViewFace> display_faces = generateDisplay(5);
+	//std::vector<Block> mazeBoardBlocks = makeMazeBoard();
+	//Player player;
 	std::cout<<"hello \n";
 	//std::cout<<"there \n";
 
@@ -370,13 +381,13 @@ int main ()
 		// draw our texture to the screen
 		//DrawTexture(wabbit, 800, 200, RED);
 
-	for(int i=0; i < display_faces.size(); i++){
-            display_faces[i].renderViewFace();
-        }
-        for(int i=0; i < mazeBoardBlocks.size(); i++){
-            mazeBoardBlocks[i].pos.displayVector();
-        }
-        player.renderPlayer();
+		//for(int i=0; i < display_faces.size(); i++){
+            //display_faces[i].renderViewFace();
+        //}
+        //for(int i=0; i < mazeBoardBlocks.size(); i++){
+        //    mazeBoardBlocks[i].pos.displayVector();
+        //}
+        //player.renderPlayer();
 
 
 		// end the frame and get ready for the next one  (display frame, poll input, etc...)
