@@ -66,7 +66,7 @@ struct IntVector{
             return ((x == other.x) && (y == other.y) && (z == other.z));
     }
 
-    static IntVector rotateVector(IntVector v, bool anticlockwise){
+    static IntVector rotateVectorZ(IntVector v, bool anticlockwise){
       if (anticlockwise){
         IntVector result(v.y,-v.x,v.z);
         return result;
@@ -76,6 +76,7 @@ struct IntVector{
         return result;
       }
     }
+    //make versions for other direction rotations
 };
 
 template<> struct std::hash<IntVector> {
@@ -239,21 +240,21 @@ class Block{
         //    top0(nullptr),
         {
             direction_to_face.reserve(6);
-			//direction_to_face[IntVector{1,0,0}] = Face();
-			//direction_to_face[IntVector{-1,0,0}] = Face();
-			//direction_to_face[IntVector{0,1,0}] = Face();
-			//direction_to_face[IntVector{0,-1,0}] = Face();
+			direction_to_face[IntVector{1,0,0}] = Face();
+			direction_to_face[IntVector{-1,0,0}] = Face();
+			direction_to_face[IntVector{0,1,0}] = Face();
+			direction_to_face[IntVector{0,-1,0}] = Face();
 
-			//direction_to_face[IntVector{0,0,1}] = Face();
-			//direction_to_face[IntVector{0,0,-1}] = Face();
+			direction_to_face[IntVector{0,0,1}] = Face();
+			direction_to_face[IntVector{0,0,-1}] = Face();
 		}
 
         int add_connection(Block from, IntVector dir){
             return 0;
         }
-        //Face get_next_block(IntVector dir){
-		//	return direction_to_face[dir];
-		//}
+        Face get_next_block(IntVector dir){
+			return direction_to_face[dir];
+		}
 		bool operator==(const Block& other) const {
             return blockID == other.blockID;
     }
@@ -303,10 +304,10 @@ std::vector<Block> makeMazeBoard(){
         if (shouldTurn){
 			bool isRight = randomBool();
 			if (isRight){
-				direction = IntVector::rotateVector(direction,false);
+				direction = IntVector::rotateVectorZ(direction,false);
 			}
 			else{
-			direction = IntVector::rotateVector(direction,true);
+			    direction = IntVector::rotateVectorZ(direction,true);
 			}
 		}
         position = IntVector::addIntVector(position,direction);
@@ -342,6 +343,12 @@ class Player{
 		Vector2 head_pos = Vector2Add(drawpos,headOffset);
 		DrawCircleV(head_pos, 0.5*map_scale/2, PURPLE);
 	}
+	void turn_player(bool is_right){
+	    direction = IntVector::rotateVectorZ(direction, !is_right);
+	}
+	void move_forward(){
+	    position = IntVector::addIntVector(position, direction);
+	}
 };
 
 int main ()
@@ -357,11 +364,9 @@ int main ()
 
 
 	//Initialise main variables
-	//std::vector<ViewFace> display_faces = generateDisplay(5);
-	//std::vector<Block> mazeBoardBlocks = makeMazeBoard();
-	//Player player;
-	std::cout<<"hello \n";
-	//std::cout<<"there \n";
+	std::vector<ViewFace> display_faces = generateDisplay(3);
+	std::vector<Block> mazeBoardBlocks = makeMazeBoard();
+	Player player;
 
 	Vector2 projectionOffset{10,10};
 	Vector2 mapOffset{500,10};
@@ -369,11 +374,23 @@ int main ()
 	// game loop
 	while (!WindowShouldClose())		// run the loop until the user presses ESCAPE or presses the Close button on the window
 	{
+    	if (IsKeyPressed(KEY_RIGHT)){
+            player.turn_player(true);
+            std::cout << "right \n";
+    	}
+        if (IsKeyPressed(KEY_LEFT)){
+            player.turn_player(false);
+            std::cout << "left \n";
+    	}
+        if (IsKeyPressed(KEY_ENTER)){
+            player.move_forward();
+            std::cout << "forwards \n";
+    	}
 		// drawing
 		BeginDrawing();
 
 		// Setup the back buffer for drawing (clear color and depth buffers)
-		ClearBackground(SKYBLUE);
+		ClearBackground(PURPLE);
 
 		// draw some text using the default font
 		//DrawText("Hello Raylib, Hello Noah", 200,200,20,LIME);
@@ -381,13 +398,13 @@ int main ()
 		// draw our texture to the screen
 		//DrawTexture(wabbit, 800, 200, RED);
 
-		//for(int i=0; i < display_faces.size(); i++){
-            //display_faces[i].renderViewFace();
-        //}
-        //for(int i=0; i < mazeBoardBlocks.size(); i++){
-        //    mazeBoardBlocks[i].pos.displayVector();
-        //}
-        //player.renderPlayer();
+		for(int i=0; i < display_faces.size(); i++){
+            display_faces[i].renderViewFace();
+        }
+        for(int i=0; i < mazeBoardBlocks.size(); i++){
+            mazeBoardBlocks[i].pos.displayVector();
+        }
+        player.renderPlayer();
 
 
 		// end the frame and get ready for the next one  (display frame, poll input, etc...)
