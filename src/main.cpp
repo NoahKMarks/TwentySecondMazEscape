@@ -56,6 +56,10 @@ struct IntVector{
         IntVector result = {v1.x + v2.x, v1.y+v2.y, v1.z+v2.z};
         return result;
     }
+    IntVector reverseVector(){
+        IntVector result = {-y,-x,-z};
+        return result;
+	}
     void displayVector(float size=1, Vector2 offset = screenCentre){
         Vector2 converted(x*map_scale, y*map_scale);
         Vector2 drawpos = Vector2Add(offset, converted);
@@ -77,6 +81,8 @@ struct IntVector{
       }
     }
     //make versions for other direction rotations
+    
+    
 };
 
 template<> struct std::hash<IntVector> {
@@ -288,7 +294,7 @@ std::vector<Block> makeMazeBoard(){
         // connect blocks
         if (prev_block != nullptr){
             (*new_block).add_connection((*prev_block), direction);
-            //(*prev_block).add_connection((*new_block), -direction);
+            (*prev_block).add_connection((*new_block), direction.reverseVector());
         }
 
         //RANDOMLY ADD PORTAL ON ONE SIDE TO PREVIOUS BLOCK
@@ -339,7 +345,7 @@ class Player{
         Vector2 drawpos = Vector2Add(draw_offset, scaledPos);
         DrawCircleV(drawpos, 0.75*map_scale/2, RED);
 
-        Vector2 headOffset(direction.x*map_scale, direction.y*map_scale/2);
+        Vector2 headOffset(direction.x*map_scale/2, direction.y*map_scale/2);
 		Vector2 head_pos = Vector2Add(drawpos,headOffset);
 		DrawCircleV(head_pos, 0.5*map_scale/2, PURPLE);
 	}
