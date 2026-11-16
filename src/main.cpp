@@ -258,9 +258,10 @@ class Block{
         int add_connection(Block from, IntVector dir){
             return 0;
         }
-        Face get_next_block(IntVector dir){
-			return direction_to_face[dir];
+        Block get_next_block(IntVector dir){
+			return direction_to_face.at(dir).getNextBlock();
 		}
+		
 		bool operator==(const Block& other) const {
             return blockID == other.blockID;
     }
@@ -332,30 +333,35 @@ std::vector<Block> makeMazeBoard(){
 class Player{
   private:
 	IntVector direction;
-	IntVector position;
+	//IntVector position;
+	Block* current_block;
   public:
-	Player()
+	Player(Block* start_block)
 	:
-		direction{0,1,0},
-		position{0,0,0}
+		current_block(start_block),
+		direction{0,1,0}
+		//position{0,0,0}
 	{}
 	void renderPlayer(Vector2 draw_offset = screenCentre){
-
+		IntVector position = (*current_block).pos;
 		Vector2 scaledPos(position.x*map_scale, position.y*map_scale);
         Vector2 drawpos = Vector2Add(draw_offset, scaledPos);
         DrawCircleV(drawpos, 0.75*map_scale/2, RED);
 
         Vector2 headOffset(direction.x*map_scale/2, direction.y*map_scale/2);
 		Vector2 head_pos = Vector2Add(drawpos,headOffset);
-		DrawCircleV(head_pos, 0.5*map_scale/2, PURPLE);
+		DrawCircleV(head_pos, 0.5*map_scale/2, BLUE);
 	}
 	void turn_player(bool is_right){
 	    direction = IntVector::rotateVectorZ(direction, !is_right);
 	}
 	void move_forward(){
-	    position = IntVector::addIntVector(position, direction);
+		Block* next_block = (*current_block).get_next_block(direction);
+		if (next_block != nullptr){
+			current_block = *(next_block);
+		}
 	}
-};
+};	
 
 int main ()
 {
@@ -372,7 +378,7 @@ int main ()
 	//Initialise main variables
 	std::vector<ViewFace> display_faces = generateDisplay(3);
 	std::vector<Block> mazeBoardBlocks = makeMazeBoard();
-	Player player;
+	Player player(mazeBoardBlocks.front());
 
 	Vector2 projectionOffset{10,10};
 	Vector2 mapOffset{500,10};
