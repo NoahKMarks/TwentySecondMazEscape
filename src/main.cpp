@@ -255,16 +255,31 @@ class Block{
 			direction_to_face[IntVector{0,0,-1}] = Face();
 		}
 
-        int add_connection(Block from, IntVector dir){
-            return 0;
+        Face get_face_from_dir(IntVector dir){
+            return direction_to_face.at(dir);
         }
-        Block get_next_block(IntVector dir){
-			return direction_to_face.at(dir).getNextBlock();
+
+		Block* get_next_block(IntVector dir){
+            Face next_face = get_face_from_dir(dir);
+            std::cout << "next face " << &next_face << " \n";
+			return next_face.getNextBlock();
 		}
+
+        int add_connection(Block *toBlock, IntVector dir){
+            Face next_face = get_face_from_dir(dir);
+            if (next_face.getNextBlock() == nullptr){
+                std::cout << "connecting \n";
+                next_face.setNextBlock(toBlock);
+                return 0;
+            }
+            else{
+                return 1;
+            }
+        }
 		
 		bool operator==(const Block& other) const {
             return blockID == other.blockID;
-    }
+        }
 };
 
 
@@ -294,8 +309,8 @@ std::vector<Block> makeMazeBoard(){
 
         // connect blocks
         if (prev_block != nullptr){
-            (*new_block).add_connection((*prev_block), direction);
-            (*prev_block).add_connection((*new_block), direction.reverseVector());
+            (*new_block).add_connection(prev_block, direction.reverseVector());
+            (*prev_block).add_connection(new_block, direction);
         }
 
         //RANDOMLY ADD PORTAL ON ONE SIDE TO PREVIOUS BLOCK
@@ -334,7 +349,7 @@ class Player{
   private:
 	IntVector direction;
 	//IntVector position;
-	Block* current_block;
+	Block* current_block;// pointer to block in maze
   public:
 	Player(Block* start_block)
 	:
@@ -344,6 +359,7 @@ class Player{
 	{}
 	void renderPlayer(Vector2 draw_offset = screenCentre){
 		IntVector position = (*current_block).pos;
+        //std::cout << position << "\n";
 		Vector2 scaledPos(position.x*map_scale, position.y*map_scale);
         Vector2 drawpos = Vector2Add(draw_offset, scaledPos);
         DrawCircleV(drawpos, 0.75*map_scale/2, RED);
@@ -357,9 +373,14 @@ class Player{
 	}
 	void move_forward(){
 		Block* next_block = (*current_block).get_next_block(direction);
+        std::cout << current_block << "\n";
 		if (next_block != nullptr){
-			current_block = *(next_block);
+            std::cout << "moving \n";
+			current_block = next_block;
 		}
+		else{
+            std::cout << "blocked \n";
+        }
 	}
 };	
 
@@ -378,7 +399,7 @@ int main ()
 	//Initialise main variables
 	std::vector<ViewFace> display_faces = generateDisplay(3);
 	std::vector<Block> mazeBoardBlocks = makeMazeBoard();
-	Player player(mazeBoardBlocks.front());
+	Player player(&mazeBoardBlocks.front());
 
 	Vector2 projectionOffset{10,10};
 	Vector2 mapOffset{500,10};
@@ -402,7 +423,7 @@ int main ()
 		BeginDrawing();
 
 		// Setup the back buffer for drawing (clear color and depth buffers)
-		ClearBackground(PURPLE);
+		ClearBackground(BLUE);
 
 		// draw some text using the default font
 		//DrawText("Hello Raylib, Hello Noah", 200,200,20,LIME);
