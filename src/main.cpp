@@ -57,7 +57,7 @@ struct IntVector{
         return result;
     }
     IntVector reverseVector(){
-        IntVector result = {-y,-x,-z};
+        IntVector result = {-x,-y,-z};
         return result;
 	}
     void displayVector(float size=1, Vector2 offset = screenCentre){
@@ -74,7 +74,7 @@ struct IntVector{
 
     static IntVector rotateVectorZ(IntVector v, bool anticlockwise){
       if (anticlockwise){
-        IntVector result(v.y,-v.x,v.z);
+        IntVector result(v.y,-+v.x,v.z);
         return result;
       }
       else{
@@ -267,17 +267,17 @@ class Block{
 			std::cout << &direction_to_face[IntVector{0,-1,0}] << "\n";
 			std::cout << &direction_to_face[IntVector{0,0,1}] << "\n";
 			std::cout << &direction_to_face[IntVector{0,0,-1}] << "\n";
-            return *direction_to_face[dir];
+            return &(direction_to_face[dir]);
         }
 
 		Block* get_next_block(IntVector dir){
             Face* next_face = get_face_from_dir(dir);
             std::cout << "next face " << next_face << " \n";
-			return (&next_face).getNextBlock();
+			return (*next_face).getNextBlock();
 		}
 
         int add_connection(Block *toBlock, IntVector dir){
-            Face& next_face = &(get_face_from_dir(dir));
+            Face& next_face = *(get_face_from_dir(dir));
             if (next_face.getNextBlock() == nullptr){
                 std::cout << "connecting \n";
                 next_face.setNextBlock(toBlock);
