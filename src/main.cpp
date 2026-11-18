@@ -67,7 +67,9 @@ struct IntVector{
     }
 
     bool operator==(const IntVector& other) const {
-            return ((x == other.x) && (y == other.y) && (z == other.z));
+            bool result = ((x == other.x) && (y == other.y) && (z == other.z));
+            //std::cout << this << (IntVector)other << result << "\n";
+            return result;
     }
 
     static IntVector rotateVectorZ(IntVector v, bool anticlockwise){
@@ -81,8 +83,8 @@ struct IntVector{
       }
     }
     //make versions for other direction rotations
-    
-    
+
+
 };
 
 template<> struct std::hash<IntVector> {
@@ -110,12 +112,13 @@ bool randomBool(){
 }
 
 std::ostream& operator<<(std::ostream& os, const Vector2& v) { //overload << so it can print Vector2
-    return os << "(" << v.x << ", " << v.y << ")";
+    os << "x: "<<v.x<< " y: " << v.y << "\n";
+    return os;
+
 }
 
-std::ostream& operator<<(std::ostream& Stream,const IntVector vec) {
-  Stream << "x: "<<vec.x<< " y: " << vec.y << "\n";
-  return Stream;
+std::ostream& operator<<(std::ostream& os,const IntVector v) {
+  return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
 }
 
 void drawLinesFromPoints(const Vector2 (&points)[4]){
@@ -255,18 +258,26 @@ class Block{
 			direction_to_face[IntVector{0,0,-1}] = Face();
 		}
 
-        Face get_face_from_dir(IntVector dir){
-            return direction_to_face.at(dir);
+        Face* get_face_from_dir(IntVector dir){
+      		std::cout << dir << "\n";
+
+            std::cout << &direction_to_face[IntVector{1,0,0}] << "\n";
+			std::cout << &direction_to_face[IntVector{-1,0,0}] << "\n";
+			std::cout << &direction_to_face[IntVector{0,1,0}] << "\n";
+			std::cout << &direction_to_face[IntVector{0,-1,0}] << "\n";
+			std::cout << &direction_to_face[IntVector{0,0,1}] << "\n";
+			std::cout << &direction_to_face[IntVector{0,0,-1}] << "\n";
+            return *direction_to_face[dir];
         }
 
 		Block* get_next_block(IntVector dir){
-            Face next_face = get_face_from_dir(dir);
-            std::cout << "next face " << &next_face << " \n";
-			return next_face.getNextBlock();
+            Face* next_face = get_face_from_dir(dir);
+            std::cout << "next face " << next_face << " \n";
+			return (&next_face).getNextBlock();
 		}
 
         int add_connection(Block *toBlock, IntVector dir){
-            Face next_face = get_face_from_dir(dir);
+            Face& next_face = &(get_face_from_dir(dir));
             if (next_face.getNextBlock() == nullptr){
                 std::cout << "connecting \n";
                 next_face.setNextBlock(toBlock);
@@ -276,7 +287,7 @@ class Block{
                 return 1;
             }
         }
-		
+
 		bool operator==(const Block& other) const {
             return blockID == other.blockID;
         }
@@ -373,7 +384,7 @@ class Player{
 	}
 	void move_forward(){
 		Block* next_block = (*current_block).get_next_block(direction);
-        std::cout << current_block << "\n";
+        std::cout << "current block : "<< current_block << "\n";
 		if (next_block != nullptr){
             std::cout << "moving \n";
 			current_block = next_block;
@@ -382,7 +393,7 @@ class Player{
             std::cout << "blocked \n";
         }
 	}
-};	
+};
 
 int main ()
 {
