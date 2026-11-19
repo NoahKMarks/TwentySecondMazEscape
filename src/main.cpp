@@ -298,7 +298,8 @@ std::vector<Block> makeMazeBoard(){
     int steps_to_finish = maze_steps+1;
     IntVector position = {0, 0, 0}; //Just used for visualisation Not actual game
     IntVector direction = {1, 0, 0};
-
+    bool can_turn_left = true;
+    bool can_turn_right = true;
     //int max_block_count = 20; // must be bigger than steps to finish
     std::vector<Block> block_array;
     block_array.reserve(steps_to_finish);
@@ -334,15 +335,19 @@ std::vector<Block> makeMazeBoard(){
 
         //change direction (and maybe make it an enum or int instead of vector)
         bool shouldTurn = randomBool();
-        if (shouldTurn){
-			bool isRight = randomBool();
-			if (isRight){
-				direction = IntVector::rotateVectorZ(direction,false);
-			}
-			else{
-			    direction = IntVector::rotateVectorZ(direction,true);
-			}
+        bool isRight = randomBool();
+        if (shouldTurn && isRight && can_turn_right){
+			direction = IntVector::rotateVectorZ(direction,false);
+			can_turn_left = false;
 		}
+		else if(shouldTurn && !isRight && can_turn_left){
+		    direction = IntVector::rotateVectorZ(direction,true);
+			can_turn_right = false;
+		}
+        else {
+            can_turn_left = true;
+            can_turn_right = true;
+        }
         position = IntVector::addIntVector(position,direction);
         steps_to_finish --;
     }
