@@ -41,7 +41,7 @@ const int maze_steps = 10;
 const int turn_rate = 3; //chance to make a turn in correct maze path per step
 const int portal_rate = 6; //chance to attempt to spawn a portal is 1/portal_rate
 
-const int fpr = 4; //number of faces per ring
+const int fpr = 5; //number of faces per ring
 
 struct IntVector{
     int x,y,z;
@@ -140,7 +140,7 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 
 	const int ring_count = tunnel_depth+1;
 	const int total_points = ring_count*4;
-	const int face_count = tunnel_depth*fpr+1; //one center and four per ring
+	const int face_count = tunnel_depth*fpr; //one center and four per ring
 
 	//-----Genarates Points for the Quads Faces-----
 	// starts at most outer points and goes in so loop backwards
@@ -160,14 +160,24 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 	displayFaces.reserve(face_count); // Save contiguous Memory for when objects are created
 
 	//This Loop makes faces from the point and adds new objects to the array
-	for (int i=0; i<face_count-1; i++){
+
+	for (int rn=0; rn<ring_count; rn++){
+	for (int fn=0; fn<fpr; fn++){
+	int i = rn*4 + fn;
+	Vector2 *zone_points[4];
 	    //Makes The faces
-		Vector2 *zone_points[4]= {
-					&displayPoints[i],
-					((i%fpr)==3)? &displayPoints[i-3] : &displayPoints[i+1],
-					((i%fpr)==3)? &displayPoints[i+1] : &displayPoints[i+5], // Ternary Operator checks if at ring wraparound case
-					&displayPoints[i+4],
-		};//there is always 3 more verticies than faces(including centre so no out of bounds)
+		if (fn!=fpr-1){
+    		zone_points[0] = &displayPoints[i];
+    		zone_points[1] = ((i%4)==3)? &displayPoints[i-3] : &displayPoints[i+1];
+            zone_points[2] = ((i%4)==3)? &displayPoints[i+1] : &displayPoints[i+5]; // Ternary Operator checks if at ring wraparound case
+            zone_points[3] = &displayPoints[i+4];
+        }//there is always 3 more verticies than faces(including centre so no out of bounds)
+		else{
+			zone_points[0] = &displayPoints[i];
+    		zone_points[1] = &displayPoints[i+1];
+            zone_points[2] = &displayPoints[i+2]; // Ternary Operator checks if at ring wraparound case
+            zone_points[3] = &displayPoints[i+3];
+		}
 
 		//calculate faces Lighting Factor
 		int row_num = i/fpr;
@@ -176,6 +186,8 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 		//std::cout << "row_num: " <<row_num<< "  |  face_num: "<< i << " |  lightFactor: "<< lightFactor << "\n";
 		//adds Face
 		displayFaces.emplace_back(zone_points, (float)(lightFactor));
+
+	}
 	}
 	//Make the Centre end Face and put at end
 	Vector2 *center_face_points[4] = {
@@ -184,7 +196,7 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 				&displayPoints[tunnel_depth*fpr+2],
 				&displayPoints[tunnel_depth*fpr+3],
 	};
-	displayFaces.emplace_back(center_face_points, 1/(1.0+tunnel_depth*light_scale*tunnel_depth*light_scale));//Also calculates face light factor
+	//displayFaces.emplace_back(center_face_points, 1/(1.0+tunnel_depth*light_scale*tunnel_depth*light_scale));//Also calculates face light factor
 
 	return displayFaces;
 }
@@ -416,7 +428,7 @@ int main ()
 
 
 	//Initialise main variables
-	std::vector<ViewFace> display_faces = generateDisplay(5);
+	std::vector<ViewFace> display_faces = generateDisplay(7);
 	std::vector<Block> mazeBoardBlocks = makeMazeBoard();
 	Player player(&mazeBoardBlocks.front());
 
@@ -456,10 +468,13 @@ int main ()
 			Face* rightFace = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true));
 
 		    if (i%fpr == 1 && leftFace->getNextBlock()!=nullptr){
-                ;
+
 			}
 			else if (i%fpr== 3 && rightFace->getNextBlock()!=nullptr){
-                ;
+
+			}
+			else if (i%fpr== 4 && frontFace->getNextBlock()!=nullptr){
+
 			}
 			else{
 			    display_faces[i].renderViewFace();
