@@ -41,7 +41,7 @@ const int maze_steps = 10;
 const int turn_rate = 3; //chance to make a turn in correct maze path per step
 const int portal_rate = 6; //chance to attempt to spawn a portal is 1/portal_rate
 
-const int fpr = 5; //number of faces per ring
+const int fpr = 50; //number of faces per ring
 
 struct IntVector{
     int x,y,z;
@@ -172,42 +172,31 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 	//This Loop makes faces from the point and adds new objects to the array
 
 	for (int rn=0; rn<ring_count; rn++){
-	for (int fn=0; fn<fpr; fn++){
-	int i = rn*4 + fn;
-	Vector2 *zone_points[4];
-	    //Makes The faces
-		if (fn!=fpr-1){
-    		zone_points[0] = &displayPoints[i];
-    		zone_points[1] = ((i%4)==3)? &displayPoints[i-3] : &displayPoints[i+1];
-            zone_points[2] = ((i%4)==3)? &displayPoints[i+1] : &displayPoints[i+5]; // Ternary Operator checks if at ring wraparound case
-            zone_points[3] = &displayPoints[i+4];
-        }//there is always 3 more verticies than faces(including centre so no out of bounds)
-		else{
-			zone_points[0] = &displayPoints[i];
-    		zone_points[1] = &displayPoints[i+1];
-            zone_points[2] = &displayPoints[i+2]; // Ternary Operator checks if at ring wraparound case
-            zone_points[3] = &displayPoints[i+3];
-		}
+    	for (int fn=0; fn<fpr; fn++){
+        	int i = rn*4 + fn;
+        	Vector2 *zone_points[4];
+       	    //Makes The faces, top, right, bottom, left
+      		if (fn<4){
+          		zone_points[0] = &displayPoints[i];
+          		zone_points[1] = ((i%4)==3)? &displayPoints[i-3] : &displayPoints[i+1];
+                zone_points[2] = ((i%4)==3)? &displayPoints[i+1] : &displayPoints[i+5]; // Ternary Operator checks if at ring wraparound case
+                zone_points[3] = &displayPoints[i+4];
+            }
+            else if (fn==4){ // back face
+     			zone_points[0] = &displayPoints[i];
+          		zone_points[1] = &displayPoints[i+1];
+                zone_points[2] = &displayPoints[i+2]; // Ternary Operator checks if at ring wraparound case
+                zone_points[3] = &displayPoints[i+3];
+      		}
 
-		//calculate faces Lighting Factor
-		int row_num = i/fpr;
-		float factored_distance_squared = (row_num*light_scale*row_num*light_scale) + (light_scale/2)*(light_scale/2);
-		float lightFactor = 1.0f/(1.0f+factored_distance_squared);
-		//std::cout << "row_num: " <<row_num<< "  |  face_num: "<< i << " |  lightFactor: "<< lightFactor << "\n";
-		//adds Face
-		displayFaces.emplace_back(zone_points, (float)(lightFactor));
-
+      		//calculate faces Lighting Factor
+      		float factored_distance_squared = (rn*light_scale*rn*light_scale) + (light_scale/2)*(light_scale/2);
+      		float lightFactor = 1.0f/(1.0f+factored_distance_squared);
+      		//std::cout << "row_num: " <<row_num<< "  |  face_num: "<< i << " |  lightFactor: "<< lightFactor << "\n";
+      		//adds Face
+      		displayFaces.emplace_back(zone_points, (float)(lightFactor));
+	    }
 	}
-	}
-	//Make the Centre end Face and put at end
-	Vector2 *center_face_points[4] = {
-				&displayPoints[tunnel_depth*fpr],
-				&displayPoints[tunnel_depth*fpr+1],
-				&displayPoints[tunnel_depth*fpr+2],
-				&displayPoints[tunnel_depth*fpr+3],
-	};
-	//displayFaces.emplace_back(center_face_points, 1/(1.0+tunnel_depth*light_scale*tunnel_depth*light_scale));//Also calculates face light factor
-
 	return displayFaces;
 }
 
@@ -228,7 +217,7 @@ class Face{
             std::mt19937 r2(dev());
             std::mt19937 r3(dev());
 
-            std::uniform_int_distribution<std::mt19937::result_type> dist(170,210);//make static
+            std::uniform_int_distribution<std::mt19937::result_type> dist(150,220);//make static
             color =  {
                 (unsigned char)(dist(r1)),
                 (unsigned char)(dist(r2)),
