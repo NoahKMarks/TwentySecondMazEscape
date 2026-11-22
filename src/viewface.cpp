@@ -6,16 +6,20 @@
 class ViewFace{
     private:
         Vector2 facePoints[4];
-        //int pointCount = 4;
+        int pointCount;
 
         //Color color;
         float lightMult;
     public:
-        ViewFace (Vector2* points[4], float lightMultiplier)
+        ViewFace (Vector2* points[], float lightMultiplier, int point_count = 4)
         :
-        facePoints{*points[0],*points[1],*points[2],*points[3]},
+        facePoints{},
+        pointCount(point_count),
         lightMult(lightMultiplier)
         {
+            for (int i = 0; i < pointCount; i++){
+                facePoints[i] = *points[i];
+            }
 
             std::random_device dev;// make static
             std::mt19937 r1(dev());
@@ -51,7 +55,7 @@ class ViewFace{
             //DrawTriangleLines(*firstPointer, *(firstPointer+1),*(firstPointer+2), BLUE);
             //DrawTriangle(*firstPointer, *(firstPointer+2),*(firstPointer+1), MAGENTA);
 
-            DrawTriangleFan(firstPointer, 4, finalCol); //facepoints should be Vector2 *points
+            DrawTriangleFan(firstPointer, pointCount, finalCol);
 
             //drawLinesFromPoints(facePoints);
             //color.Brightness(lightMult-1.0f)

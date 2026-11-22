@@ -41,7 +41,7 @@ const int maze_steps = 10;
 const int turn_rate = 3; //chance to make a turn in correct maze path per step
 const int portal_rate = 6; //chance to attempt to spawn a portal is 1/portal_rate
 
-// Order matches the seven faces generated for each ring.
+// Order matches the eleven faces generated for each ring.
 enum class Direction {
     Bottom,
     Right,
@@ -49,10 +49,14 @@ enum class Direction {
     Left,
     Front,
     FrontLeft,
-    FrontRight
+    FrontRight,
+    RoofLeft,
+    RoofRight,
+    FloorLeft,
+    FloorRight
 };
 
-const int fpr = 7; //number of faces per ring
+const int fpr = 11; //number of faces per ring
 
 struct IntVector{
     int x,y,z;
@@ -163,7 +167,7 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 	const int total_points = ring_count*4;
 	const int face_count = tunnel_depth*fpr;
 
-	//-----Genarates Points for the Quads Faces-----
+	//-----Genarates Points for the Faces-----
 	// starts at most outer points and goes in so loop backwards
 	std::vector<Vector2> displayPoints(total_points);
 	for (int i=ring_count-1; i>=0; i--){
@@ -183,10 +187,13 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 	//This Loop makes faces from the point and adds new objects to the array
 
 	for (int rn=0; rn<tunnel_depth; rn++){
+        const int outer = rn*4;
+        const int inner = outer+4;
     	for (int fn=0; fn<fpr; fn++){
             const Direction face_direction = static_cast<Direction>(fn);
         	int i = rn*4 + fn;
         	Vector2 *zone_points[4];
+            int point_count = 4;
             Vector2 side_points[2];
        	    //Makes The faces, bottom, right, top, left
             if (fn < static_cast<int>(Direction::Front)){
@@ -202,8 +209,6 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
                 zone_points[3] = &displayPoints[i+3];
       		}
             else if (face_direction == Direction::FrontLeft){
-                const int outer = rn*4;
-                const int inner = outer+4;
                 side_points[0] = {displayPoints[outer].x, displayPoints[inner].y};
                 side_points[1] = {displayPoints[outer+3].x, displayPoints[inner+3].y};
                 zone_points[0] = &side_points[0];
@@ -212,8 +217,6 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
                 zone_points[3] = &side_points[1];
             }
             else if (face_direction == Direction::FrontRight){
-                const int outer = rn*4;
-                const int inner = outer+4;
                 side_points[0] = {displayPoints[outer+1].x, displayPoints[inner+1].y};
                 side_points[1] = {displayPoints[outer+2].x, displayPoints[inner+2].y};
                 zone_points[0] = &displayPoints[inner+1];
@@ -221,13 +224,41 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
                 zone_points[2] = &side_points[1];
                 zone_points[3] = &displayPoints[inner+2];
             }
+            else if (face_direction == Direction::RoofLeft){
+                side_points[0] = {displayPoints[outer+3].x, displayPoints[inner+3].y};
+                zone_points[0] = &side_points[0];
+                zone_points[1] = &displayPoints[inner+3];
+                zone_points[2] = &displayPoints[outer+3];
+                point_count = 3;
+            }
+            else if (face_direction == Direction::RoofRight){
+                side_points[0] = {displayPoints[outer+2].x, displayPoints[inner+2].y};
+                zone_points[0] = &displayPoints[inner+2];
+                zone_points[1] = &side_points[0];
+                zone_points[2] = &displayPoints[outer+2];
+                point_count = 3;
+            }
+            else if (face_direction == Direction::FloorLeft){
+                side_points[0] = {displayPoints[outer].x, displayPoints[inner].y};
+                zone_points[0] = &displayPoints[outer];
+                zone_points[1] = &displayPoints[inner];
+                zone_points[2] = &side_points[0];
+                point_count = 3;
+            }
+            else if (face_direction == Direction::FloorRight){
+                side_points[0] = {displayPoints[outer+1].x, displayPoints[inner+1].y};
+                zone_points[0] = &displayPoints[outer+1];
+                zone_points[1] = &side_points[0];
+                zone_points[2] = &displayPoints[inner+1];
+                point_count = 3;
+            }
 
       		//calculate faces Lighting Factor
       		float factored_distance_squared = (rn*light_scale*rn*light_scale) + (light_scale/2)*(light_scale/2);
       		float lightFactor = 1.0f/(1.0f+factored_distance_squared);
       		//std::cout << "row_num: " <<row_num<< "  |  face_num: "<< i << " |  lightFactor: "<< lightFactor << "\n";
       		//adds Face
-      		displayFaces.emplace_back(zone_points, (float)(lightFactor));
+			displayFaces.emplace_back(zone_points, (float)(lightFactor), point_count);
 	    }
 	}
 	return displayFaces;
@@ -463,6 +494,8 @@ int main ()
 	std::vector<ViewFace> display_faces = generateDisplay(7);
 	std::vector<Block> mazeBoardBlocks = makeMazeBoard();
 	Player player(&mazeBoardBlocks.front());
+	const IntVector up_direction{0,0,1};
+	const IntVector down_direction{0,0,-1};
 
 	Vector2 projectionOffset{10,10};
 	Vector2 mapOffset{700,450};
@@ -509,19 +542,39 @@ int main ()
 			        face = viewBlock->get_face_from_dir(player.direction);
 			        break;
 			    case Direction::Bottom:
+			        face = viewBlock->get_face_from_dir(down_direction);
+			        break;
 			    case Direction::Top:
-			        display_faces[i].renderViewFace(GRAY);
+			        face = viewBlock->get_face_from_dir(up_direction);
 			        break;
 			    case Direction::FrontLeft:
-			        if (viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true))->getNextBlock() != nullptr){
-			            display_faces[i].renderViewFace(GRAY);
+			    case Direction::RoofLeft:
+			    case Direction::FloorLeft:{
+			        Block* sideBlock = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true))->getNextBlock();
+			        if (sideBlock != nullptr){
+			            if (face_direction == Direction::FrontLeft){
+			                display_faces[i].renderViewFace(GRAY);
+			            }
+			            else{
+			                face = sideBlock->get_face_from_dir(face_direction == Direction::RoofLeft ? up_direction : down_direction);
+			            }
 			        }
 			        break;
+			    }
 			    case Direction::FrontRight:
-			        if (viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, false))->getNextBlock() != nullptr){
-			            display_faces[i].renderViewFace(GRAY);
+			    case Direction::RoofRight:
+			    case Direction::FloorRight:{
+			        Block* sideBlock = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, false))->getNextBlock();
+			        if (sideBlock != nullptr){
+			            if (face_direction == Direction::FrontRight){
+			                display_faces[i].renderViewFace(GRAY);
+			            }
+			            else{
+			                face = sideBlock->get_face_from_dir(face_direction == Direction::RoofRight ? up_direction : down_direction);
+			            }
 			        }
 			        break;
+			    }
 			}
 
 			if (face != nullptr && face->getNextBlock()==nullptr){
