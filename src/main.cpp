@@ -41,16 +41,18 @@ const int maze_steps = 10;
 const int turn_rate = 3; //chance to make a turn in correct maze path per step
 const int portal_rate = 6; //chance to attempt to spawn a portal is 1/portal_rate
 
-// Order matches the five faces generated for each ring.
+// Order matches the seven faces generated for each ring.
 enum class Direction {
     Bottom,
     Right,
     Top,
     Left,
-    Front
+    Front,
+    FrontLeft,
+    FrontRight
 };
 
-const int fpr = 5; //number of faces per ring
+const int fpr = 7; //number of faces per ring
 
 struct IntVector{
     int x,y,z;
@@ -159,7 +161,7 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 
 	const int ring_count = tunnel_depth+1;
 	const int total_points = ring_count*4;
-	const int face_count = tunnel_depth*fpr; //one center and four per ring
+	const int face_count = tunnel_depth*fpr;
 
 	//-----Genarates Points for the Quads Faces-----
 	// starts at most outer points and goes in so loop backwards
@@ -185,8 +187,9 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
             const Direction face_direction = static_cast<Direction>(fn);
         	int i = rn*4 + fn;
         	Vector2 *zone_points[4];
+            Vector2 side_points[2];
        	    //Makes The faces, bottom, right, top, left
-      		if (face_direction != Direction::Front){
+            if (fn < static_cast<int>(Direction::Front)){
           		zone_points[0] = &displayPoints[i];
           		zone_points[1] = (face_direction == Direction::Left)? &displayPoints[i-3] : &displayPoints[i+1];
                 zone_points[2] = (face_direction == Direction::Left)? &displayPoints[i+1] : &displayPoints[i+5]; // Ternary Operator checks if at ring wraparound case
@@ -198,6 +201,26 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
                 zone_points[2] = &displayPoints[i+2]; // Ternary Operator checks if at ring wraparound case
                 zone_points[3] = &displayPoints[i+3];
       		}
+            else if (face_direction == Direction::FrontLeft){
+                const int outer = rn*4;
+                const int inner = outer+4;
+                side_points[0] = {displayPoints[outer].x, displayPoints[inner].y};
+                side_points[1] = {displayPoints[outer+3].x, displayPoints[inner+3].y};
+                zone_points[0] = &side_points[0];
+                zone_points[1] = &displayPoints[inner];
+                zone_points[2] = &displayPoints[inner+3];
+                zone_points[3] = &side_points[1];
+            }
+            else if (face_direction == Direction::FrontRight){
+                const int outer = rn*4;
+                const int inner = outer+4;
+                side_points[0] = {displayPoints[outer+1].x, displayPoints[inner+1].y};
+                side_points[1] = {displayPoints[outer+2].x, displayPoints[inner+2].y};
+                zone_points[0] = &displayPoints[inner+1];
+                zone_points[1] = &side_points[0];
+                zone_points[2] = &side_points[1];
+                zone_points[3] = &displayPoints[inner+2];
+            }
 
       		//calculate faces Lighting Factor
       		float factored_distance_squared = (rn*light_scale*rn*light_scale) + (light_scale/2)*(light_scale/2);
@@ -491,6 +514,8 @@ int main ()
 			        break;
 			    case Direction::Bottom:
 			    case Direction::Top:
+			    case Direction::FrontLeft:
+			    case Direction::FrontRight:
 			        display_faces[i].renderViewFace(GRAY);
 			        break;
 			}
@@ -499,8 +524,8 @@ int main ()
 			    display_faces[i].renderViewFace(face->getFaceColor());
 			}
 
-			if (face_direction == Direction::Front){//finished processing faces in a ring
-			    viewBlock = face->getNextBlock();
+			if (i % fpr == fpr-1){//finished processing faces in a ring
+			    viewBlock = viewBlock->get_face_from_dir(player.direction)->getNextBlock();
 				if (viewBlock==nullptr){
 				    break;
 				}
