@@ -259,7 +259,8 @@ class Block{
 		}
 
         Face* get_face_from_dir(IntVector dir){
-      		std::cout << dir << "\n";
+/*
+            std::cout << dir << "\n";
 
             std::cout << &direction_to_face[IntVector{1,0,0}] << "\n";
 			std::cout << &direction_to_face[IntVector{-1,0,0}] << "\n";
@@ -267,7 +268,8 @@ class Block{
 			std::cout << &direction_to_face[IntVector{0,-1,0}] << "\n";
 			std::cout << &direction_to_face[IntVector{0,0,1}] << "\n";
 			std::cout << &direction_to_face[IntVector{0,0,-1}] << "\n";
-            return &(direction_to_face[dir]);
+*/
+			return &(direction_to_face[dir]);
         }
 
 		Block* get_next_block(IntVector dir){
@@ -362,12 +364,12 @@ std::vector<Block> makeMazeBoard(){
 }
 
 class Player{
-  private:
-	IntVector direction;
+  public:
+    IntVector direction;
 	//IntVector position;
 	Block* current_block;// pointer to block in maze
-  public:
-	Player(Block* start_block)
+
+    Player(Block* start_block)
 	:
 		current_block(start_block),
 		direction{0,1,0}
@@ -413,7 +415,7 @@ int main ()
 
 
 	//Initialise main variables
-	std::vector<ViewFace> display_faces = generateDisplay(3);
+	std::vector<ViewFace> display_faces = generateDisplay(5);
 	std::vector<Block> mazeBoardBlocks = makeMazeBoard();
 	Player player(&mazeBoardBlocks.front());
 
@@ -446,10 +448,29 @@ int main ()
 
 		// draw our texture to the screen
 		//DrawTexture(wabbit, 800, 200, RED);
-
+		Block* viewBlock = player.current_block;
 		for(int i=0; i < display_faces.size(); i++){
-            display_faces[i].renderViewFace();
-        }
+		    Face* frontFace = viewBlock->get_face_from_dir(player.direction);
+			Face* leftFace = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, false));
+			Face* rightFace = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true));
+
+		    if (i%4 == 1 && leftFace->getNextBlock()!=nullptr){
+                ;
+			}
+			else if (i%4 == 3 && rightFace->getNextBlock()!=nullptr){
+                ;
+			}
+			else{
+			    display_faces[i].renderViewFace();
+			}
+			if (i%4 == 3){
+			    viewBlock = frontFace->getNextBlock();
+				if (viewBlock==nullptr){
+				    break;
+				}
+			}
+		}
+
         for(int i=0; i < mazeBoardBlocks.size(); i++){
             mazeBoardBlocks[i].pos.displayVector();
         }
