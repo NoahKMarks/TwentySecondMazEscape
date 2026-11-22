@@ -8,7 +8,7 @@ class ViewFace{
         Vector2 facePoints[4];
         //int pointCount = 4;
 
-        Color color;
+        //Color color;
         float lightMult;
     public:
         ViewFace (Vector2* points[4], float lightMultiplier)
@@ -23,7 +23,7 @@ class ViewFace{
             std::mt19937 r3(dev());
 
             std::uniform_int_distribution<std::mt19937::result_type> dist(190,215); // make static
-            color =  {
+            Color color =  {
                 (unsigned char)(dist(r1)),
                 (unsigned char)(dist(r2)),
                 (unsigned char)(dist(r3)),
@@ -31,7 +31,7 @@ class ViewFace{
             };
         }
 
-        void renderViewFace(){
+        void renderViewFace(Color color){
             Color finalCol({
                 (unsigned char)(std::clamp(color.r*lightMult,0.0f,255.0f)),//raylib does have a clamp function
                 (unsigned char)(std::clamp(color.g*lightMult,0.0f,255.0f)),

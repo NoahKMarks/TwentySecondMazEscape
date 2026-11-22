@@ -83,6 +83,16 @@ struct IntVector{
         return result;
       }
     }
+    static IntVector rotateVectorX(IntVector v, bool anticlockwise){
+      if (anticlockwise){
+        IntVector result(v.y,-+v.x,v.z);
+        return result;
+      }
+      else{
+        IntVector result(-v.y,v.x,v.z);
+        return result;
+      }
+    }
     //make versions for other direction rotations
 
 
@@ -215,14 +225,14 @@ class Face{
 		{
 			std::random_device dev;
             std::mt19937 r1(dev());
-            //std::mt19937 r2(dev());
-            //std::mt19937 r3(dev());
+            std::mt19937 r2(dev());
+            std::mt19937 r3(dev());
 
-            std::uniform_int_distribution<std::mt19937::result_type> dist(150,250);//make static
+            std::uniform_int_distribution<std::mt19937::result_type> dist(170,210);//make static
             color =  {
                 (unsigned char)(dist(r1)),
-                (unsigned char)(10),
-                (unsigned char)(10),
+                (unsigned char)(dist(r2)),
+                (unsigned char)(dist(r3)),
                 (unsigned char)(255)
             };
 		}
@@ -233,6 +243,10 @@ class Face{
 		Block* getNextBlock(){
 			return next_block;
 		}
+		Color getFaceColor(){
+		    return color;
+		}
+
 };
 
 class Block{
@@ -454,7 +468,7 @@ int main ()
 		BeginDrawing();
 
 		// Setup the back buffer for drawing (clear color and depth buffers)
-		ClearBackground(BLUE);
+		ClearBackground(PURPLE);
 
 		// draw some text using the default font
 		//DrawText("Hello Raylib, Hello Noah", 200,200,20,LIME);
@@ -466,19 +480,30 @@ int main ()
 		    Face* frontFace = viewBlock->get_face_from_dir(player.direction);
 			Face* leftFace = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, false));
 			Face* rightFace = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true));
+			Face* bottomFace = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true));
+			Face* topFace = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true));
 
-		    if (i%fpr == 1 && leftFace->getNextBlock()!=nullptr){
+		    if (i%fpr == 1 && leftFace->getNextBlock()==nullptr){
+				Color faceCol = leftFace->getFaceColor();
+				display_faces[i].renderViewFace(faceCol);
+			}
+			else if (i%fpr== 3 && rightFace->getNextBlock()==nullptr){
+                Color faceCol = rightFace->getFaceColor();
+                display_faces[i].renderViewFace(faceCol);
+			}
+			else if (i%fpr== 4 && frontFace->getNextBlock()==nullptr){
+		        Color faceCol = frontFace->getFaceColor();
+                display_faces[i].renderViewFace(faceCol);
+			}
+			else if (i%fpr== 0){
+		        Color faceCol = frontFace->getFaceColor();
+                display_faces[i].renderViewFace(GRAY);
+			}
+			else if (i%fpr== 2){
+		        Color faceCol = frontFace->getFaceColor();
+                display_faces[i].renderViewFace(GRAY);
+			}
 
-			}
-			else if (i%fpr== 3 && rightFace->getNextBlock()!=nullptr){
-
-			}
-			else if (i%fpr== 4 && frontFace->getNextBlock()!=nullptr){
-
-			}
-			else{
-			    display_faces[i].renderViewFace();
-			}
 			if (i%fpr == fpr-1){//finished processing faces in a ring
 			    viewBlock = frontFace->getNextBlock();
 				if (viewBlock==nullptr){
