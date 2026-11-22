@@ -246,17 +246,13 @@ class Face{
 		next_block(nullptr)
 		{
 			std::random_device dev;
-            std::mt19937 r1(dev());
-            std::mt19937 r2(dev());
-            std::mt19937 r3(dev());
+            std::mt19937 rng(dev());
+            std::uniform_real_distribution<float> random(0.0f, 1.0f);
 
-            std::uniform_int_distribution<std::mt19937::result_type> dist(150,220);//make static
-            color =  {
-                (unsigned char)(dist(r1)),
-                (unsigned char)(dist(r2)),
-                (unsigned char)(dist(r3)),
-                (unsigned char)(255)
-            };
+            float hue = random(rng)*360.0f;
+            float saturation = random(rng)*0.05f;
+
+            color = ColorFromHSV(hue, saturation, 0.82f);
 		}
 		void setNextBlock(Block* to_block){
 			next_block = to_block;
