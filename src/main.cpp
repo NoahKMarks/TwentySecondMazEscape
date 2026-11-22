@@ -41,6 +41,7 @@ const int maze_steps = 10;
 const int turn_rate = 3; //chance to make a turn in correct maze path per step
 const int portal_rate = 6; //chance to attempt to spawn a portal is 1/portal_rate
 
+const int fpr = 4; //number of faces per ring
 
 struct IntVector{
     int x,y,z;
@@ -139,7 +140,7 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 
 	const int ring_count = tunnel_depth+1;
 	const int total_points = ring_count*4;
-	const int face_count = tunnel_depth*4+1; //one center and four per ring
+	const int face_count = tunnel_depth*fpr+1; //one center and four per ring
 
 	//-----Genarates Points for the Quads Faces-----
 	// starts at most outer points and goes in so loop backwards
@@ -163,13 +164,13 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 	    //Makes The faces
 		Vector2 *zone_points[4]= {
 					&displayPoints[i],
-					((i%4)==3)? &displayPoints[i-3] : &displayPoints[i+1],
-					((i%4)==3)? &displayPoints[i+1] : &displayPoints[i+5], // Ternary Operator checks if at ring wraparound case
+					((i%fpr)==3)? &displayPoints[i-3] : &displayPoints[i+1],
+					((i%fpr)==3)? &displayPoints[i+1] : &displayPoints[i+5], // Ternary Operator checks if at ring wraparound case
 					&displayPoints[i+4],
 		};//there is always 3 more verticies than faces(including centre so no out of bounds)
 
 		//calculate faces Lighting Factor
-		int row_num = i/4;
+		int row_num = i/fpr;
 		float factored_distance_squared = (row_num*light_scale*row_num*light_scale) + (light_scale/2)*(light_scale/2);
 		float lightFactor = 1.0f/(1.0f+factored_distance_squared);
 		//std::cout << "row_num: " <<row_num<< "  |  face_num: "<< i << " |  lightFactor: "<< lightFactor << "\n";
@@ -178,10 +179,10 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 	}
 	//Make the Centre end Face and put at end
 	Vector2 *center_face_points[4] = {
-				&displayPoints[tunnel_depth*4],
-				&displayPoints[tunnel_depth*4+1],
-				&displayPoints[tunnel_depth*4+2],
-				&displayPoints[tunnel_depth*4+3],
+				&displayPoints[tunnel_depth*fpr],
+				&displayPoints[tunnel_depth*fpr+1],
+				&displayPoints[tunnel_depth*fpr+2],
+				&displayPoints[tunnel_depth*fpr+3],
 	};
 	displayFaces.emplace_back(center_face_points, 1/(1.0+tunnel_depth*light_scale*tunnel_depth*light_scale));//Also calculates face light factor
 
@@ -454,16 +455,16 @@ int main ()
 			Face* leftFace = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, false));
 			Face* rightFace = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true));
 
-		    if (i%4 == 1 && leftFace->getNextBlock()!=nullptr){
+		    if (i%fpr == 1 && leftFace->getNextBlock()!=nullptr){
                 ;
 			}
-			else if (i%4 == 3 && rightFace->getNextBlock()!=nullptr){
+			else if (i%fpr== 3 && rightFace->getNextBlock()!=nullptr){
                 ;
 			}
 			else{
 			    display_faces[i].renderViewFace();
 			}
-			if (i%4 == 3){
+			if (i%fpr == fpr-1){//finished processing faces in a ring
 			    viewBlock = frontFace->getNextBlock();
 				if (viewBlock==nullptr){
 				    break;
