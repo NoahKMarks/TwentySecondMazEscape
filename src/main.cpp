@@ -465,7 +465,7 @@ int main ()
 	Player player(&mazeBoardBlocks.front());
 
 	Vector2 projectionOffset{10,10};
-	Vector2 mapOffset{500,10};
+	Vector2 mapOffset{700,450};
 
 	// game loop
 	while (!WindowShouldClose())		// run the loop until the user presses ESCAPE or presses the Close button on the window
@@ -529,9 +529,9 @@ int main ()
 		}
 
         for(int i=0; i < mazeBoardBlocks.size(); i++){
-            mazeBoardBlocks[i].pos.displayVector();
+            mazeBoardBlocks[i].pos.displayVector(1, mapOffset);
         }
-        player.renderPlayer();
+        player.renderPlayer(mapOffset);
 
 
 		// end the frame and get ready for the next one  (display frame, poll input, etc...)
