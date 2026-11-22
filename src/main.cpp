@@ -459,7 +459,7 @@ int main ()
             player.turn_player(false);
             std::cout << "left \n";
     	}
-        if (IsKeyPressed(KEY_ENTER)){
+        if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_UP)){
             player.move_forward();
             std::cout << "forwards \n";
     	}
