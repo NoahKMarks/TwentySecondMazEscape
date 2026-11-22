@@ -29,8 +29,9 @@ const int screenHeight = 600;
 const Vector2 screenCentre{(float)screenWidth/2, (float)screenHeight/2};
 
 const int block_separation = 1.0; //3d separation between each grid cell in the world
-const float light_factor = 3.0; //stops further cells getting dark too quickly; might be similar to where light starts dropping off
+const float light_factor = 2.5; //stops further cells getting dark too quickly; might be similar to where light starts dropping off
 const float light_scale = block_separation/light_factor;
+const bool use_textures = false; // Set false for flat face colours.
 
 const float map_scale = 30;
 
@@ -195,19 +196,28 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
         	Vector2 *zone_points[4];
             int point_count = 4;
             Vector2 side_points[2];
+            float side_dist = 0;
+            float forward_dist = 0;
+            float up_dist = 1/2;
        	    //Makes The faces, bottom, right, top, left
             if (fn < static_cast<int>(Direction::Front)){
           		zone_points[0] = &displayPoints[i];
           		zone_points[1] = (face_direction == Direction::Left)? &displayPoints[i-3] : &displayPoints[i+1];
                 zone_points[2] = (face_direction == Direction::Left)? &displayPoints[i+1] : &displayPoints[i+5]; // Ternary Operator checks if at ring wraparound case
                 zone_points[3] = &displayPoints[i+4];
+                forward_dist = rn;
+                side_dist = 1/2;
+
             }
             else if (face_direction == Direction::Front){ // back face
      			zone_points[0] = &displayPoints[i];
           		zone_points[1] = &displayPoints[i+1];
                 zone_points[2] = &displayPoints[i+2]; // Ternary Operator checks if at ring wraparound case
                 zone_points[3] = &displayPoints[i+3];
+                forward_dist = rn + 1/2;
+
       		}
+            //note side dist should be 1 not 1/2 on faces but have made it less as you see half of face
             else if (face_direction == Direction::FrontLeft){
                 side_points[0] = {displayPoints[outer].x, displayPoints[inner].y};
                 side_points[1] = {displayPoints[outer+3].x, displayPoints[inner+3].y};
@@ -215,6 +225,9 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
                 zone_points[1] = &displayPoints[inner];
                 zone_points[2] = &displayPoints[inner+3];
                 zone_points[3] = &side_points[1];
+                forward_dist = rn + 1/2;
+                side_dist = 1/2;
+
             }
             else if (face_direction == Direction::FrontRight){
                 side_points[0] = {displayPoints[outer+1].x, displayPoints[inner+1].y};
@@ -223,6 +236,8 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
                 zone_points[1] = &side_points[0];
                 zone_points[2] = &side_points[1];
                 zone_points[3] = &displayPoints[inner+2];
+                forward_dist = rn + 1/2;
+                side_dist = 1/2;
             }
             else if (face_direction == Direction::RoofLeft){
                 side_points[0] = {displayPoints[outer+3].x, displayPoints[inner+3].y};
@@ -230,6 +245,9 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
                 zone_points[1] = &displayPoints[inner+3];
                 zone_points[2] = &displayPoints[outer+3];
                 point_count = 3;
+                forward_dist = rn;
+                side_dist = 1/2;
+                up_dist = 1/2;
             }
             else if (face_direction == Direction::RoofRight){
                 side_points[0] = {displayPoints[outer+2].x, displayPoints[inner+2].y};
@@ -237,6 +255,9 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
                 zone_points[1] = &side_points[0];
                 zone_points[2] = &displayPoints[outer+2];
                 point_count = 3;
+                forward_dist = rn;
+                side_dist = 1/2;
+                up_dist = 1/2;
             }
             else if (face_direction == Direction::FloorLeft){
                 side_points[0] = {displayPoints[outer].x, displayPoints[inner].y};
@@ -244,6 +265,9 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
                 zone_points[1] = &displayPoints[inner];
                 zone_points[2] = &side_points[0];
                 point_count = 3;
+                forward_dist = rn;
+                side_dist = 1/2;//should be 1 if calculating from centre
+                up_dist = 1/2;
             }
             else if (face_direction == Direction::FloorRight){
                 side_points[0] = {displayPoints[outer+1].x, displayPoints[inner+1].y};
@@ -251,10 +275,13 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
                 zone_points[1] = &side_points[0];
                 zone_points[2] = &displayPoints[inner+1];
                 point_count = 3;
+                forward_dist = rn;
+                side_dist = 1/2;
+                up_dist = 1/2;
             }
 
       		//calculate faces Lighting Factor
-      		float factored_distance_squared = (rn*light_scale*rn*light_scale) + (light_scale/2)*(light_scale/2);
+      		float factored_distance_squared = (light_scale*light_scale)*(forward_dist*forward_dist + side_dist*side_dist+up_dist*up_dist);
       		float lightFactor = 1.0f/(1.0f+factored_distance_squared);
       		//std::cout << "row_num: " <<row_num<< "  |  face_num: "<< i << " |  lightFactor: "<< lightFactor << "\n";
       		//adds Face
@@ -281,9 +308,9 @@ class Face{
             std::uniform_real_distribution<float> random(0.0f, 1.0f);
 
             float hue = random(rng)*360.0f;
-            float saturation = random(rng)*0.05f;
+            float saturation = 0.5;//random(rng)*0.7f;
 
-            color = ColorFromHSV(hue, saturation, 0.82f);
+            color = ColorFromHSV(hue, saturation, 0.75f);
 		}
 		void setNextBlock(Block* to_block){
 			next_block = to_block;
@@ -478,6 +505,24 @@ class Player{
 	}
 };
 
+Texture2D createPerlinTexture(){
+	Image noise = GenImagePerlinNoise(512,512,17,91,5.0f);
+	Color* noise_pixels = static_cast<Color*>(noise.data);
+	double noise_mean = 0;
+	for (int i = 0; i < noise.width*noise.height; i++) noise_mean += noise_pixels[i].r;
+	noise_mean /= noise.width*noise.height;
+	for (int i = 0; i < noise.width*noise.height; i++){
+	    unsigned char channel = (unsigned char)std::clamp(244.0 + (noise_pixels[i].r-noise_mean)*0.42, 220.0, 255.0);
+	    noise_pixels[i] = {channel,channel,channel,255};
+	}
+	Texture2D face_texture = LoadTextureFromImage(noise);
+	UnloadImage(noise);
+	GenTextureMipmaps(&face_texture);
+	SetTextureFilter(face_texture, TEXTURE_FILTER_TRILINEAR);
+	SetTextureWrap(face_texture, TEXTURE_WRAP_CLAMP);
+	return face_texture;
+}
+
 int main ()
 {
 	// Tell the window to use vsync and work on high DPI displays
@@ -488,6 +533,7 @@ int main ()
 
 	//Make Window
 	InitWindow(screenWidth, screenHeight, "Hello Raylib, This is noah");
+	Texture2D face_texture = use_textures ? createPerlinTexture() : Texture2D{};
 
 
 	//Initialise main variables
@@ -553,7 +599,7 @@ int main ()
 			        Block* sideBlock = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true))->getNextBlock();
 			        if (sideBlock != nullptr){
 			            if (face_direction == Direction::FrontLeft){
-			                display_faces[i].renderViewFace(sideBlock->get_face_from_dir(player.direction)->getFaceColor());
+			                display_faces[i].renderViewFace(sideBlock->get_face_from_dir(player.direction)->getFaceColor(), face_texture);
 			            }
 			            else{
 			                face = sideBlock->get_face_from_dir(face_direction == Direction::RoofLeft ? up_direction : down_direction);
@@ -567,7 +613,7 @@ int main ()
 			        Block* sideBlock = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, false))->getNextBlock();
 			        if (sideBlock != nullptr){
 			            if (face_direction == Direction::FrontRight){
-			                display_faces[i].renderViewFace(sideBlock->get_face_from_dir(player.direction)->getFaceColor());
+			                display_faces[i].renderViewFace(sideBlock->get_face_from_dir(player.direction)->getFaceColor(), face_texture);
 			            }
 			            else{
 			                face = sideBlock->get_face_from_dir(face_direction == Direction::RoofRight ? up_direction : down_direction);
@@ -578,7 +624,7 @@ int main ()
 			}
 
 			if (face != nullptr && face->getNextBlock()==nullptr){
-			    display_faces[i].renderViewFace(face->getFaceColor());
+			    display_faces[i].renderViewFace(face->getFaceColor(), face_texture);
 			}
 
 			if (i % fpr == fpr-1){//finished processing faces in a ring
@@ -606,6 +652,7 @@ int main ()
 	//UnloadTexture(wabbit);
 
 	// destroy the window and cleanup the OpenGL context
+	if (face_texture.id != 0) UnloadTexture(face_texture);
 	CloseWindow();
 	return 0;
 }
