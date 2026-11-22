@@ -41,7 +41,16 @@ const int maze_steps = 10;
 const int turn_rate = 3; //chance to make a turn in correct maze path per step
 const int portal_rate = 6; //chance to attempt to spawn a portal is 1/portal_rate
 
-const int fpr = 50; //number of faces per ring
+// Order matches the five faces generated for each ring.
+enum class Direction {
+    Bottom,
+    Right,
+    Top,
+    Left,
+    Front
+};
+
+const int fpr = 5; //number of faces per ring
 
 struct IntVector{
     int x,y,z;
@@ -171,18 +180,19 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 
 	//This Loop makes faces from the point and adds new objects to the array
 
-	for (int rn=0; rn<ring_count; rn++){
+	for (int rn=0; rn<tunnel_depth; rn++){
     	for (int fn=0; fn<fpr; fn++){
+            const Direction face_direction = static_cast<Direction>(fn);
         	int i = rn*4 + fn;
         	Vector2 *zone_points[4];
-       	    //Makes The faces, top, right, bottom, left
-      		if (fn<4){
+       	    //Makes The faces, bottom, right, top, left
+      		if (face_direction != Direction::Front){
           		zone_points[0] = &displayPoints[i];
-          		zone_points[1] = ((i%4)==3)? &displayPoints[i-3] : &displayPoints[i+1];
-                zone_points[2] = ((i%4)==3)? &displayPoints[i+1] : &displayPoints[i+5]; // Ternary Operator checks if at ring wraparound case
+          		zone_points[1] = (face_direction == Direction::Left)? &displayPoints[i-3] : &displayPoints[i+1];
+                zone_points[2] = (face_direction == Direction::Left)? &displayPoints[i+1] : &displayPoints[i+5]; // Ternary Operator checks if at ring wraparound case
                 zone_points[3] = &displayPoints[i+4];
             }
-            else if (fn==4){ // back face
+            else if (face_direction == Direction::Front){ // back face
      			zone_points[0] = &displayPoints[i];
           		zone_points[1] = &displayPoints[i+1];
                 zone_points[2] = &displayPoints[i+2]; // Ternary Operator checks if at ring wraparound case
@@ -466,35 +476,31 @@ int main ()
 		//DrawTexture(wabbit, 800, 200, RED);
 		Block* viewBlock = player.current_block;
 		for(int i=0; i < display_faces.size(); i++){
-		    Face* frontFace = viewBlock->get_face_from_dir(player.direction);
-			Face* leftFace = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, false));
-			Face* rightFace = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true));
-			Face* bottomFace = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true));
-			Face* topFace = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true));
+		    const Direction face_direction = static_cast<Direction>(i % fpr);
+		    Face* face = nullptr;
 
-		    if (i%fpr == 1 && leftFace->getNextBlock()==nullptr){
-				Color faceCol = leftFace->getFaceColor();
-				display_faces[i].renderViewFace(faceCol);
-			}
-			else if (i%fpr== 3 && rightFace->getNextBlock()==nullptr){
-                Color faceCol = rightFace->getFaceColor();
-                display_faces[i].renderViewFace(faceCol);
-			}
-			else if (i%fpr== 4 && frontFace->getNextBlock()==nullptr){
-		        Color faceCol = frontFace->getFaceColor();
-                display_faces[i].renderViewFace(faceCol);
-			}
-			else if (i%fpr== 0){
-		        Color faceCol = frontFace->getFaceColor();
-                display_faces[i].renderViewFace(GRAY);
-			}
-			else if (i%fpr== 2){
-		        Color faceCol = frontFace->getFaceColor();
-                display_faces[i].renderViewFace(GRAY);
+			switch (face_direction){
+			    case Direction::Left:
+			        face = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true));
+			        break;
+			    case Direction::Right:
+			        face = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, false));
+			        break;
+			    case Direction::Front:
+			        face = viewBlock->get_face_from_dir(player.direction);
+			        break;
+			    case Direction::Bottom:
+			    case Direction::Top:
+			        display_faces[i].renderViewFace(GRAY);
+			        break;
 			}
 
-			if (i%fpr == fpr-1){//finished processing faces in a ring
-			    viewBlock = frontFace->getNextBlock();
+			if (face != nullptr && face->getNextBlock()==nullptr){
+			    display_faces[i].renderViewFace(face->getFaceColor());
+			}
+
+			if (face_direction == Direction::Front){//finished processing faces in a ring
+			    viewBlock = face->getNextBlock();
 				if (viewBlock==nullptr){
 				    break;
 				}
