@@ -553,7 +553,7 @@ int main ()
 			        Block* sideBlock = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true))->getNextBlock();
 			        if (sideBlock != nullptr){
 			            if (face_direction == Direction::FrontLeft){
-			                display_faces[i].renderViewFace(GRAY);
+			                display_faces[i].renderViewFace(sideBlock->get_face_from_dir(player.direction)->getFaceColor());
 			            }
 			            else{
 			                face = sideBlock->get_face_from_dir(face_direction == Direction::RoofLeft ? up_direction : down_direction);
@@ -567,7 +567,7 @@ int main ()
 			        Block* sideBlock = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, false))->getNextBlock();
 			        if (sideBlock != nullptr){
 			            if (face_direction == Direction::FrontRight){
-			                display_faces[i].renderViewFace(GRAY);
+			                display_faces[i].renderViewFace(sideBlock->get_face_from_dir(player.direction)->getFaceColor());
 			            }
 			            else{
 			                face = sideBlock->get_face_from_dir(face_direction == Direction::RoofRight ? up_direction : down_direction);
