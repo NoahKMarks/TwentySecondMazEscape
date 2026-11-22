@@ -510,9 +510,17 @@ int main ()
 			        break;
 			    case Direction::Bottom:
 			    case Direction::Top:
-			    case Direction::FrontLeft:
-			    case Direction::FrontRight:
 			        display_faces[i].renderViewFace(GRAY);
+			        break;
+			    case Direction::FrontLeft:
+			        if (viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true))->getNextBlock() != nullptr){
+			            display_faces[i].renderViewFace(GRAY);
+			        }
+			        break;
+			    case Direction::FrontRight:
+			        if (viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, false))->getNextBlock() != nullptr){
+			            display_faces[i].renderViewFace(GRAY);
+			        }
 			        break;
 			}
 
