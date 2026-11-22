@@ -1,7 +1,7 @@
 #include "raylib.h"
 #include "raymath.h"
+#include <algorithm>
 #include <random>
-#include <bits/stdc++.h>
 
 class ViewFace{
     private:
