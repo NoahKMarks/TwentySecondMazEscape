@@ -29,7 +29,7 @@ const int screenHeight = 600;
 const Vector2 screenCentre{(float)screenWidth/2, (float)screenHeight/2};
 
 const int block_separation = 1.0; //3d separation between each grid cell in the world
-const float light_factor = 2.5; //stops further cells getting dark too quickly; might be similar to where light starts dropping off
+const float light_factor = 3; //stops further cells getting dark too quickly; might be similar to where light starts dropping off
 const float light_scale = block_separation/light_factor;
 const bool use_textures = false; // Set false for flat face colours.
 
@@ -308,10 +308,14 @@ class Face{
             std::uniform_real_distribution<float> random(0.0f, 1.0f);
 
             float hue = random(rng)*360.0f;
-            float saturation = 0.5;//random(rng)*0.7f;
+            float saturation = 0.2;//random(rng)*0.7f;
 
             color = ColorFromHSV(hue, saturation, 0.75f);
 		}
+		void setColorOveride(Color col){
+		    color = col;
+		}
+
 		void setNextBlock(Block* to_block){
 			next_block = to_block;
 		}
@@ -420,14 +424,16 @@ std::vector<Block> makeMazeBoard(){
 
         block_array.emplace_back(block_num);//use block_num as its ID
         new_block = &block_array[block_num];
-        (*new_block).pos = position;
+        new_block->get_face_from_dir(IntVector{0,0,1})->setColorOveride(GRAY);
+        new_block->get_face_from_dir(IntVector{0,0,-1})->setColorOveride(BLUE);
+        new_block->pos = position;
 
         block_num++;
 
         // connect blocks
         if (prev_block != nullptr){
-            (*new_block).add_connection(prev_block, direction.reverseVector());
-            (*prev_block).add_connection(new_block, direction);
+            new_block->add_connection(prev_block, direction.reverseVector());
+            prev_block->add_connection(new_block, direction);
         }
 
         //RANDOMLY ADD PORTAL ON ONE SIDE TO PREVIOUS BLOCK
@@ -565,7 +571,7 @@ int main ()
 		BeginDrawing();
 
 		// Setup the back buffer for drawing (clear color and depth buffers)
-		ClearBackground(PURPLE);
+		ClearBackground(BLACK);
 
 		// draw some text using the default font
 		//DrawText("Hello Raylib, Hello Noah", 200,200,20,LIME);
@@ -653,6 +659,6 @@ int main ()
 
 	// destroy the window and cleanup the OpenGL context
 	if (face_texture.id != 0) UnloadTexture(face_texture);
-	CloseWindow();
-	return 0;
+	    CloseWindow();
+		return 0;
 }
