@@ -130,6 +130,28 @@ int randomInteger(int min = 0, int max = 10){
     return dist(randomNum);
 }
 
+IntVector getRandomDirection(
+    const IntVector& in_direction,
+    const IntVector& out_direction)
+{
+    std::vector<IntVector> directions = {
+        { 1,  0, 0}, // right
+        {-1,  0, 0}, // left
+        { 0,  1, 0}, // down
+        { 0, -1, 0}  // up
+    };
+
+    std::erase(directions, in_direction);
+    std::erase(directions, out_direction);
+
+    int index = randomInteger(0, static_cast<int>(directions.size()) - 1);
+    return directions[index];
+}
+
+// Example: reverse the incoming travel direction to point back to its neighbour.
+// IntVector extra_direction =
+//     getRandomDirection(in_direction.reverseVector(), out_direction);
+
 bool randomBool(){
 	std::random_device dev;
     std::mt19937 randomNum(dev());
