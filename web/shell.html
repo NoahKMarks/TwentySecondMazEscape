@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Twenty Second MazEscape</title>
+    <style>
+        html, body { margin: 0; min-height: 100%; background: #17131d; color: #eee; }
+        body { display: grid; place-content: center; min-height: 100vh; font-family: system-ui, sans-serif; }
+        main { width: min(900px, 100vw); text-align: center; }
+        canvas { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; outline: none; }
+        p { margin: 12px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <main>
+        <canvas id="canvas" width="900" height="600" tabindex="0" aria-label="Maze game"></canvas>
+        <p id="status" role="status">Loading game…</p>
+        <p>Click the game to focus. ← / → turn · ↑ or Enter move forward.</p>
+    </main>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const status = document.getElementById('status');
+        canvas.addEventListener('click', () => canvas.focus());
+        canvas.addEventListener('contextmenu', event => event.preventDefault());
+        canvas.addEventListener('keydown', event => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', ' '].includes(event.key)) {
+                event.preventDefault();
+            }
+        });
+        canvas.addEventListener('webglcontextlost', event => {
+            event.preventDefault();
+            status.hidden = false;
+            status.textContent = 'Graphics context lost. Reload to restart the game.';
+        });
+        var Module = {
+            canvas,
+            print: (...args) => console.log(...args),
+            printErr: (...args) => console.error(...args),
+            onRuntimeInitialized() {
+                status.hidden = true;
+                canvas.focus();
+            },
+            onAbort() {
+                status.hidden = false;
+                status.textContent = 'The game could not start. Reload to try again.';
+            }
+        };
+    </script>
+    {{{ SCRIPT }}}
+</body>
+</html>

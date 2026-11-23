@@ -9,6 +9,9 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 
 #include "raylib.h"
 #include "raymath.h"
+#if defined(__EMSCRIPTEN__)
+#include <emscripten/emscripten.h>
+#endif
 //#include "resource_dir.h"	// utility header for SearchAndSetResourceDir
 //#include "stdafx.h"
 #include <string>
@@ -561,21 +564,22 @@ int main ()
 
 	//Make Window
 	InitWindow(screenWidth, screenHeight, "One Way Out");
-	Texture2D face_texture = use_textures ? createPerlinTexture() : Texture2D{};
+	// Keep frame state alive when the browser takes over the main loop.
+	static Texture2D face_texture = use_textures ? createPerlinTexture() : Texture2D{};
 
 
 	//Initialise main variables
-	std::vector<ViewFace> display_faces = generateDisplay(7);
-	std::vector<Block> mazeBoardBlocks = makeMazeBoard();
-	Player player(&mazeBoardBlocks.front());
-	const IntVector up_direction{0,0,1};
-	const IntVector down_direction{0,0,-1};
+	static std::vector<ViewFace> display_faces = generateDisplay(7);
+	static std::vector<Block> mazeBoardBlocks = makeMazeBoard();
+	static Player player(&mazeBoardBlocks.front());
+	static const IntVector up_direction{0,0,1};
+	static const IntVector down_direction{0,0,-1};
 
 	Vector2 projectionOffset{10,10};
-	Vector2 mapOffset{700,450};
+	static Vector2 mapOffset{700,450};
 
-	// game loop
-	while (!WindowShouldClose())		// run the loop until the user presses ESCAPE or presses the Close button on the window
+	// One frame, shared by the desktop loop and the browser callback.
+	const auto updateFrame = []()
 	{
     	if (IsKeyPressed(KEY_RIGHT)){
             player.turn_player(true);
@@ -672,8 +676,14 @@ int main ()
 		// end the frame and get ready for the next one  (display frame, poll input, etc...)
 		EndDrawing();
 
-		WindowShouldClose();
-	}
+	};
+
+#if defined(__EMSCRIPTEN__)
+	// Use requestAnimationFrame so the browser can draw and process input.
+	emscripten_set_main_loop(updateFrame, 0, true);
+#else
+	while (!WindowShouldClose()) updateFrame();
+#endif
 
 	// cleanup
 	// unload our texture so it can be cleaned up
