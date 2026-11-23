@@ -432,7 +432,7 @@ std::vector<Block> makeMazeBoard(){
     bool can_turn_right = true;
     //int max_block_count = 20; // must be bigger than steps to finish
     std::vector<Block> block_array;
-    block_array.reserve(steps_to_finish);
+    block_array.reserve(steps_to_finish+2); // Keep existing links valid when adding the start and end rooms.
     //block_array.reserve(max_block_count);
 
     //std::unordered_map<IntVector, Block*> positions_to_blocks;
@@ -505,6 +505,26 @@ std::vector<Block> makeMazeBoard(){
         position = IntVector::addIntVector(position,direction);
         steps_to_finish --;
     }
+
+    // Add the endpoint rooms after all random portals have been generated.
+    Block* final_block = new_block;
+    block_array.emplace_back(block_num++);
+    Block* end_block = &block_array.back();
+    end_block->pos = position;
+    final_block->add_connection(end_block, direction);
+
+    block_array.emplace_back(block_num++);
+    Block* start_block = &block_array.back();
+    IntVector start_direction{0,1,0};
+    start_block->pos = IntVector::addIntVector(block_array.front().pos, start_direction.reverseVector());
+    start_block->add_connection(&block_array.front(), start_direction, true);
+
+    const IntVector room_directions[] = {{1,0,0}, {-1,0,0}, {0,1,0}, {0,-1,0}, {0,0,1}, {0,0,-1}};
+    for (IntVector room_direction : room_directions){
+        start_block->get_face_from_dir(room_direction)->setColorOverride(GRAY);
+        end_block->get_face_from_dir(room_direction)->setColorOverride(PINK);
+    }
+
     for (const Block& block : block_array){
         //std::cout << " pos " << block.pos << "\n";
 		;
@@ -595,7 +615,7 @@ int main ()
 	//Initialise main variables
 	static std::vector<ViewFace> display_faces = generateDisplay(7);
 	static std::vector<Block> mazeBoardBlocks = makeMazeBoard();
-	static Player player(&mazeBoardBlocks.front());
+	static Player player(&mazeBoardBlocks.back()); // The start room was appended after portal generation.
 	static const IntVector up_direction{0,0,1};
 	static const IntVector down_direction{0,0,-1};
 
