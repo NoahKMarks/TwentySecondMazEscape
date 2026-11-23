@@ -381,7 +381,7 @@ class Block{
 
 		Block* get_next_block(IntVector dir){
             Face* next_face = get_face_from_dir(dir);
-            std::cout << "next face " << next_face << " \n";
+            //std::cout << "next face " << next_face << " \n";
 			return (*next_face).getNextBlock();
 		}
 
@@ -466,16 +466,16 @@ std::vector<Block> makeMazeBoard(){
         std::erase(directions, direction);
         int index = randomInteger(0, static_cast<int>(directions.size()) - 1);
         IntVector portal_dir = directions[index];
-        /*
-        for (int i=0; i<sizeof(block_array)-1; i++){
-            bool has_place = block_array[i].get_face_from_dir(portal_dir.reverseVector())->getNextBlock();
+
+        for (int i=0; i<block_array.size()-1; i++){
+            bool has_place = (block_array[i].get_face_from_dir(portal_dir.reverseVector())->getNextBlock()==nullptr);
             if (randomInteger(0, portal_rate)==0 and has_place){
-                //make a portal (ie connection to previous block)
-                //new_block->add_connection(&block_array[i], portal_dir);
-                //block_array[i].get_face_from_dir(portal_dir.reverseVector())->setColorOverride(YELLOW);
+                //a portal (ie connection to previous block)
+                new_block->add_connection(&block_array[i], portal_dir);
+                block_array[i].get_face_from_dir(portal_dir.reverseVector())->setColorOverride(YELLOW);
             }
         }
-    */
+
 
         //IntVector return_portal_dir = IntVector::reverseVector(portal_dir)
 
