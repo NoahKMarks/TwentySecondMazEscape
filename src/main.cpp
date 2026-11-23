@@ -130,28 +130,6 @@ int randomInteger(int min = 0, int max = 10){
     return dist(randomNum);
 }
 
-IntVector getRandomDirection(
-    const IntVector& in_direction,
-    const IntVector& out_direction)
-{
-    std::vector<IntVector> directions = {
-        { 1,  0, 0}, // right
-        {-1,  0, 0}, // left
-        { 0,  1, 0}, // down
-        { 0, -1, 0}  // up
-    };
-
-    std::erase(directions, in_direction);
-    std::erase(directions, out_direction);
-
-    int index = randomInteger(0, static_cast<int>(directions.size()) - 1);
-    return directions[index];
-}
-
-// Example: reverse the incoming travel direction to point back to its neighbour.
-// IntVector extra_direction =
-//     getRandomDirection(in_direction.reverseVector(), out_direction);
-
 bool randomBool(){
 	std::random_device dev;
     std::mt19937 randomNum(dev());
@@ -334,7 +312,7 @@ class Face{
 
             color = ColorFromHSV(hue, saturation, 0.75f);
 		}
-		void setColorOveride(Color col){
+		void setColorOverride(Color col){
 		    color = col;
 		}
 
@@ -446,8 +424,8 @@ std::vector<Block> makeMazeBoard(){
 
         block_array.emplace_back(block_num);//use block_num as its ID
         new_block = &block_array[block_num];
-        new_block->get_face_from_dir(IntVector{0,0,1})->setColorOveride(GRAY);
-        new_block->get_face_from_dir(IntVector{0,0,-1})->setColorOveride(BLUE);
+        new_block->get_face_from_dir(IntVector{0,0,1})->setColorOverride(GRAY);
+        new_block->get_face_from_dir(IntVector{0,0,-1})->setColorOverride(BLUE);
         new_block->pos = position;
 
         block_num++;
@@ -458,14 +436,9 @@ std::vector<Block> makeMazeBoard(){
             prev_block->add_connection(new_block, direction);
         }
 
-        //RANDOMLY ADD PORTAL ON ONE SIDE TO PREVIOUS BLOCK
-        if (randomInteger(0, portal_rate)==0){
-            //IntVector portal_dir = IntVector.rotateVector();
-            ;//make a portal (ie connection to previous block)
-        }
         // add to dictionary
         //positions_to_blocks[position] = new_block;
-
+        IntVector in_direction = direction;
         //change direction (and maybe make it an enum or int instead of vector)
         bool shouldTurn = randomBool();
         bool isRight = randomBool();
@@ -481,6 +454,33 @@ std::vector<Block> makeMazeBoard(){
             can_turn_left = true;
             can_turn_right = true;
         }
+
+        //RANDOMLY ADD PORTAL ON ONE SIDE TO PREVIOUS BLOCK
+        std::vector<IntVector> directions = {
+            { 1,  0, 0}, // right
+            {-1,  0, 0}, // left
+            { 0,  1, 0}, // down
+            { 0, -1, 0}  // up
+        };
+        std::erase(directions, in_direction);
+        std::erase(directions, direction);
+        int index = randomInteger(0, static_cast<int>(directions.size()) - 1);
+        IntVector portal_dir = directions[index];
+        /*
+        for (int i=0; i<sizeof(block_array)-1; i++){
+            bool has_place = block_array[i].get_face_from_dir(portal_dir.reverseVector())->getNextBlock();
+            if (randomInteger(0, portal_rate)==0 and has_place){
+                //make a portal (ie connection to previous block)
+                //new_block->add_connection(&block_array[i], portal_dir);
+                //block_array[i].get_face_from_dir(portal_dir.reverseVector())->setColorOverride(YELLOW);
+            }
+        }
+    */
+
+        //IntVector return_portal_dir = IntVector::reverseVector(portal_dir)
+
+
+
         position = IntVector::addIntVector(position,direction);
         steps_to_finish --;
     }
@@ -560,7 +560,7 @@ int main ()
 	//SearchAndSetResourceDir("resources");
 
 	//Make Window
-	InitWindow(screenWidth, screenHeight, "Hello Raylib, This is noah");
+	InitWindow(screenWidth, screenHeight, "One Way Out");
 	Texture2D face_texture = use_textures ? createPerlinTexture() : Texture2D{};
 
 
