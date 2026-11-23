@@ -615,7 +615,9 @@ int main ()
 	//Initialise main variables
 	static std::vector<ViewFace> display_faces = generateDisplay(7);
 	static std::vector<Block> mazeBoardBlocks = makeMazeBoard();
-	static Player player(&mazeBoardBlocks.back()); // The start room was appended after portal generation.
+	static Block* startBlock = &mazeBoardBlocks.back();
+	static Block* endBlock = &mazeBoardBlocks[mazeBoardBlocks.size()-2];
+	static Player player(startBlock);
 	static const IntVector up_direction{0,0,1};
 	static const IntVector down_direction{0,0,-1};
 
@@ -627,24 +629,28 @@ int main ()
 	{
         if (IsKeyPressed(KEY_M)) audio.toggleMute();
         audio.update();
-    	if (IsKeyPressed(KEY_RIGHT)){
-            player.turn_player(true);
-            audio.play(SoundEffect::Turn);
-            std::cout << "right \n";
-    	}
-        if (IsKeyPressed(KEY_LEFT)){
-            player.turn_player(false);
-            audio.play(SoundEffect::Turn);
-            std::cout << "left \n";
-    	}
-        if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_UP)){
-            switch (player.move_forward()) {
-                case MoveResult::Moved: audio.play(SoundEffect::Move); break;
-                case MoveResult::Blocked: audio.play(SoundEffect::Blocked); break;
-                case MoveResult::Portal: audio.play(SoundEffect::Portal); break;
+        if (player.current_block != endBlock){
+            if (IsKeyPressed(KEY_RIGHT)){
+                player.turn_player(true);
+                audio.play(SoundEffect::Turn);
+                std::cout << "right \n";
             }
-            std::cout << "forwards \n";
-    	}
+            if (IsKeyPressed(KEY_LEFT)){
+                player.turn_player(false);
+                audio.play(SoundEffect::Turn);
+                std::cout << "left \n";
+            }
+            const bool clickedStart = player.current_block == startBlock && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+            if (clickedStart || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_UP)){
+                if (clickedStart) player.direction = {0,1,0};
+                switch (player.move_forward()) {
+                    case MoveResult::Moved: audio.play(SoundEffect::Move); break;
+                    case MoveResult::Blocked: audio.play(SoundEffect::Blocked); break;
+                    case MoveResult::Portal: audio.play(SoundEffect::Portal); break;
+                }
+                std::cout << "forwards \n";
+            }
+        }
 		// drawing
 		BeginDrawing();
 
@@ -724,6 +730,14 @@ int main ()
         }
         player.renderPlayer(mapOffset);
 
+        if (player.current_block == startBlock){
+            const char* text = "Click to Start";
+            DrawText(text, (screenWidth-MeasureText(text,32))/2, 96, 32, WHITE);
+        }
+        else if (player.current_block == endBlock){
+            const char* text = "You Win";
+            DrawText(text, (screenWidth-MeasureText(text,48))/2, (screenHeight-48)/2, 48, WHITE);
+        }
 
 		// end the frame and get ready for the next one  (display frame, poll input, etc...)
 		EndDrawing();
