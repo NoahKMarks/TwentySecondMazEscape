@@ -26,6 +26,18 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 #include "viewface.cpp"
 #include "block.cpp"
 #include "board.cpp"
+#include "audio.h"
+
+static GameAudio audio;
+
+#if defined(__EMSCRIPTEN__)
+// Keep the browser's sound control in sync with the game's M-key mute state.
+extern "C" {
+EMSCRIPTEN_KEEPALIVE int IsGameAudioReady() { return audio.isReady(); }
+EMSCRIPTEN_KEEPALIVE int IsGameAudioMuted() { return audio.isMuted(); }
+EMSCRIPTEN_KEEPALIVE void SetGameAudioMuted(int muted) { audio.setMuted(muted != 0); }
+}
+#endif
 
 const int screenWidth = 900;
 const int screenHeight = 600;
@@ -299,6 +311,7 @@ class Block; //Forward declaration so face knows it exists and can point to it
 class Face{
 	private:
 		Block* next_block;
+		bool portal = false;
 		Color color;
 
 	public:
@@ -319,8 +332,13 @@ class Face{
 		    color = col;
 		}
 
-		void setNextBlock(Block* to_block){
+		void setNextBlock(Block* to_block, bool is_portal = false){
 			next_block = to_block;
+			portal = is_portal;
+		}
+
+		bool isPortal() const{
+			return portal;
 		}
 
 		Block* getNextBlock(){
@@ -388,11 +406,11 @@ class Block{
 			return (*next_face).getNextBlock();
 		}
 
-        int add_connection(Block *toBlock, IntVector dir){
+        int add_connection(Block *toBlock, IntVector dir, bool is_portal = false){
             Face& next_face = *(get_face_from_dir(dir));
             if (next_face.getNextBlock() == nullptr){
                 std::cout << "connecting \n";
-                next_face.setNextBlock(toBlock);
+                next_face.setNextBlock(toBlock, is_portal);
                 return 0;
             }
             else{
@@ -473,8 +491,8 @@ std::vector<Block> makeMazeBoard(){
         for (int i=0; i<block_array.size()-1; i++){
             bool has_place = (block_array[i].get_face_from_dir(portal_dir.reverseVector())->getNextBlock()==nullptr);
             if (randomInteger(0, portal_rate)==0 and has_place){
-                //a portal (ie connection to previous block)
-                new_block->add_connection(&block_array[i], portal_dir);
+                // A portal connection uses its own movement sound.
+                new_block->add_connection(&block_array[i], portal_dir, true);
                 block_array[i].get_face_from_dir(portal_dir.reverseVector())->setColorOverride(YELLOW);
             }
         }
@@ -496,6 +514,8 @@ std::vector<Block> makeMazeBoard(){
 	return block_array;
 
 }
+
+enum class MoveResult { Blocked, Moved, Portal };
 
 class Player{
   public:
@@ -523,16 +543,19 @@ class Player{
 	void turn_player(bool is_right){
 	    direction = IntVector::rotateVectorZ(direction, !is_right);
 	}
-	void move_forward(){
-		Block* next_block = (*current_block).get_next_block(direction);
+	MoveResult move_forward(){
+		Face* exit_face = current_block->get_face_from_dir(direction);
+		Block* next_block = exit_face->getNextBlock();
         std::cout << "current block : "<< current_block << "\n";
 		if (next_block != nullptr){
             std::cout << "moving \n";
 			current_block = next_block;
+			return exit_face->isPortal() ? MoveResult::Portal : MoveResult::Moved;
 		}
 		else{
             std::cout << "blocked \n";
         }
+		return MoveResult::Blocked;
 	}
 };
 
@@ -564,6 +587,7 @@ int main ()
 
 	//Make Window
 	InitWindow(screenWidth, screenHeight, "One Way Out");
+	audio.initialize();
 	// Keep frame state alive when the browser takes over the main loop.
 	static Texture2D face_texture = use_textures ? createPerlinTexture() : Texture2D{};
 
@@ -581,16 +605,24 @@ int main ()
 	// One frame, shared by the desktop loop and the browser callback.
 	const auto updateFrame = []()
 	{
+        if (IsKeyPressed(KEY_M)) audio.toggleMute();
+        audio.update();
     	if (IsKeyPressed(KEY_RIGHT)){
             player.turn_player(true);
+            audio.play(SoundEffect::Turn);
             std::cout << "right \n";
     	}
         if (IsKeyPressed(KEY_LEFT)){
             player.turn_player(false);
+            audio.play(SoundEffect::Turn);
             std::cout << "left \n";
     	}
         if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_UP)){
-            player.move_forward();
+            switch (player.move_forward()) {
+                case MoveResult::Moved: audio.play(SoundEffect::Move); break;
+                case MoveResult::Blocked: audio.play(SoundEffect::Blocked); break;
+                case MoveResult::Portal: audio.play(SoundEffect::Portal); break;
+            }
             std::cout << "forwards \n";
     	}
 		// drawing
@@ -691,6 +723,7 @@ int main ()
 
 	// destroy the window and cleanup the OpenGL context
 	if (face_texture.id != 0) UnloadTexture(face_texture);
+	audio.shutdown();
 	    CloseWindow();
 		return 0;
 }

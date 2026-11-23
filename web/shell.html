@@ -10,20 +10,72 @@
         main { width: min(900px, 100vw); text-align: center; }
         canvas { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; outline: none; }
         p { margin: 12px; font-size: 14px; }
+        .audio-controls { display: flex; justify-content: center; align-items: center; gap: 12px; margin: 12px; font-size: 14px; }
+        button { padding: 8px 14px; border: 1px solid #80758e; border-radius: 6px; background: #31283c; color: inherit; font: inherit; cursor: pointer; }
+        button:disabled { opacity: 0.6; cursor: default; }
     </style>
 </head>
 <body>
     <main>
         <canvas id="canvas" width="900" height="600" tabindex="0" aria-label="Maze game"></canvas>
         <p id="status" role="status">Loading game…</p>
-        <p>Click the game to focus. ← / → turn · ↑ or Enter move forward.</p>
+        <div class="audio-controls">
+            <button id="audio-toggle" type="button" disabled>Enable sound</button>
+            <span id="audio-status" role="status">Loading audio…</span>
+        </div>
+        <p>← / → turn · ↑ or Enter move forward · M mute.</p>
     </main>
     <script>
         const canvas = document.getElementById('canvas');
         const status = document.getElementById('status');
+        const audioToggle = document.getElementById('audio-toggle');
+        const audioStatus = document.getElementById('audio-status');
+        let gameReady = false;
+
+        // raylib's miniaudio backend owns these AudioContexts. Resume them
+        // directly in a user gesture so browser autoplay rules allow playback.
+        function audioContexts() {
+            return (window.miniaudio?.devices || []).filter(device => device?.webaudio).map(device => device.webaudio);
+        }
+        function updateAudioControl() {
+            if (!gameReady) return;
+            const ready = Boolean(Module._IsGameAudioReady());
+            audioToggle.disabled = !ready;
+            if (!ready) {
+                audioStatus.textContent = 'Sound unavailable';
+                return;
+            }
+            const muted = Boolean(Module._IsGameAudioMuted());
+            const contexts = audioContexts();
+            const running = contexts.length > 0 && contexts.every(context => context.state === 'running');
+            audioToggle.textContent = muted ? 'Unmute sound' : running ? 'Mute sound' : 'Enable sound';
+            audioStatus.textContent = muted ? 'Sound muted' : running ? 'Sound on' : 'Click Enable sound to start audio';
+        }
+        async function enableAudio() {
+            if (!gameReady || !Module._IsGameAudioReady()) return;
+            try {
+                await Promise.all(audioContexts().map(context => context.resume()));
+            } catch (error) {
+                console.error('Could not enable sound', error);
+            }
+            updateAudioControl();
+        }
+        audioToggle.addEventListener('click', () => {
+            const running = audioContexts().some(context => context.state === 'running');
+            if (running && !Module._IsGameAudioMuted()) {
+                Module._SetGameAudioMuted(1);
+                updateAudioControl();
+            } else {
+                Module._SetGameAudioMuted(0);
+                enableAudio();
+            }
+            canvas.focus();
+        });
         canvas.addEventListener('click', () => canvas.focus());
+        canvas.addEventListener('pointerdown', enableAudio);
         canvas.addEventListener('contextmenu', event => event.preventDefault());
         canvas.addEventListener('keydown', event => {
+            enableAudio();
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', ' '].includes(event.key)) {
                 event.preventDefault();
             }
@@ -38,6 +90,8 @@
             print: (...args) => console.log(...args),
             printErr: (...args) => console.error(...args),
             onRuntimeInitialized() {
+                gameReady = true;
+                setInterval(updateAudioControl, 200);
                 status.hidden = true;
                 canvas.focus();
             },

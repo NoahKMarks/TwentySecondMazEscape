@@ -118,6 +118,8 @@ endif
 GENERATED :=
 OBJECTS :=
 
+GENERATED += $(OBJDIR)/audio.o
+OBJECTS += $(OBJDIR)/audio.o
 GENERATED += $(OBJDIR)/block.o
 GENERATED += $(OBJDIR)/board.o
 GENERATED += $(OBJDIR)/main.o
@@ -193,6 +195,9 @@ endif
 # File Rules
 # #############################################
 
+$(OBJDIR)/audio.o: src/audio.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/block.o: src/block.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
