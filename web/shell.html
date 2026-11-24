@@ -8,7 +8,7 @@
         html, body { margin: 0; min-height: 100%; background: #17131d; color: #eee; }
         body { display: grid; place-content: center; min-height: 100vh; font-family: system-ui, sans-serif; }
         main { width: min(900px, 100vw); text-align: center; }
-        canvas { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; outline: none; }
+        canvas { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; outline: none; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         p { margin: 12px; font-size: 14px; }
         .audio-controls { display: flex; justify-content: center; align-items: center; gap: 12px; margin: 12px; font-size: 14px; }
         button { padding: 8px 14px; border: 1px solid #80758e; border-radius: 6px; background: #31283c; color: inherit; font: inherit; cursor: pointer; }
@@ -23,7 +23,7 @@
             <button id="audio-toggle" type="button" disabled>Enable sound</button>
             <span id="audio-status" role="status">Loading audio…</span>
         </div>
-        <p>← / → turn · ↑ or Enter move forward · M mute.</p>
+        <p>Tap, click or press any key to start · Tap left/right or use ← / → to turn · You move automatically every 2 seconds · Tap or press any key to retry · M mute.</p>
     </main>
     <script>
         const canvas = document.getElementById('canvas');

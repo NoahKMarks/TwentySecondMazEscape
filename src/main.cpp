@@ -50,13 +50,14 @@ const float light_scale = block_separation/light_factor;
 const bool use_textures = false; // Set false for flat face colours.
 
 const float map_scale = 30;
-constexpr double move_interval_seconds = 1.0;
+constexpr double move_interval_seconds = 2.0;
 constexpr double round_duration_seconds = 20.0;
 static_assert(move_interval_seconds > 0);
+constexpr int moves_per_round = static_cast<int>(round_duration_seconds/move_interval_seconds);
 
 //maze genaration
 //
-const int maze_steps = 10;
+const int maze_steps = 9; // The final room adds the tenth timed move.
 
 const int turn_rate = 3; //chance to make a turn in correct maze path per step
 const int portal_rate = 6; //chance to attempt to spawn a portal is 1/portal_rate
@@ -328,9 +329,9 @@ class Face{
             std::uniform_real_distribution<float> random(0.0f, 1.0f);
 
             float hue = random(rng)*360.0f;
-            float saturation = 0.2;//random(rng)*0.7f;
+            float saturation = random(rng)*0.1f;
 
-            color = ColorFromHSV(hue, saturation, 0.75f);
+            color = ColorFromHSV(hue, saturation, 0.82f);
 		}
 		void setColorOverride(Color col){
 		    color = col;
@@ -449,8 +450,8 @@ std::vector<Block> makeMazeBoard(){
 
         block_array.emplace_back(block_num);//use block_num as its ID
         new_block = &block_array[block_num];
-        new_block->get_face_from_dir(IntVector{0,0,1})->setColorOverride(GRAY);
-        new_block->get_face_from_dir(IntVector{0,0,-1})->setColorOverride(BLUE);
+        new_block->get_face_from_dir(IntVector{0,0,1})->setColorOverride(GetColor(0x455B61FF));
+        new_block->get_face_from_dir(IntVector{0,0,-1})->setColorOverride(GetColor(0x806F5BFF));
         new_block->pos = position;
 
         block_num++;
@@ -497,7 +498,6 @@ std::vector<Block> makeMazeBoard(){
             if (randomInteger(0, portal_rate)==0 and has_place){
                 // A portal connection uses its own movement sound.
                 new_block->add_connection(&block_array[i], portal_dir, true);
-                block_array[i].get_face_from_dir(portal_dir.reverseVector())->setColorOverride(YELLOW);
             }
         }
 
@@ -525,9 +525,10 @@ std::vector<Block> makeMazeBoard(){
 
     const IntVector room_directions[] = {{1,0,0}, {-1,0,0}, {0,1,0}, {0,-1,0}, {0,0,1}, {0,0,-1}};
     for (IntVector room_direction : room_directions){
-        start_block->get_face_from_dir(room_direction)->setColorOverride(GRAY);
-        end_block->get_face_from_dir(room_direction)->setColorOverride(PINK);
+        start_block->get_face_from_dir(room_direction)->setColorOverride(GetColor(0xBCB782FF));
+        end_block->get_face_from_dir(room_direction)->setColorOverride(GetColor(0xDDBC58FF));
     }
+    start_block->get_face_from_dir({0,0,-1})->setColorOverride(GetColor(0x776131FF));
 
     for (const Block& block : block_array){
         //std::cout << " pos " << block.pos << "\n";
@@ -612,6 +613,7 @@ int main ()
 
 	//Make Window
 	InitWindow(screenWidth, screenHeight, "One Way Out");
+	SetExitKey(KEY_NULL); // Any key can start, including Escape.
 	audio.initialize();
 	// Keep frame state alive when the browser takes over the main loop.
 	static Texture2D face_texture = use_textures ? createPerlinTexture() : Texture2D{};
@@ -625,6 +627,7 @@ int main ()
 	static Player player(startBlock);
 	static GameState gameState = GameState::Waiting;
 	static double secondsRemaining = round_duration_seconds;
+	static int movesRemaining = moves_per_round;
 	static double roundStartedAt = 0;
 	static double nextMoveAt = 0;
 	static const IntVector up_direction{0,0,1};
@@ -632,56 +635,68 @@ int main ()
 
 	Vector2 projectionOffset{10,10};
 	static Vector2 mapOffset{700,450};
+	static bool showMap = false;
 
 	// One frame, shared by the desktop loop and the browser callback.
 	const auto updateFrame = []()
 	{
+        if (IsKeyPressed(KEY_X)) showMap = !showMap;
         if (IsKeyPressed(KEY_M)) audio.toggleMute();
         audio.update();
         const double now = GetTime();
+        // Raylib maps the primary touch to the left mouse button.
+        const bool tapped = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+        const bool tappedLeft = tapped && GetMouseX() < screenWidth/2;
         if (gameState == GameState::Dead){
-            if (GetKeyPressed() != 0){
+            if (tapped || GetKeyPressed() != 0){
                 player = Player(startBlock);
                 secondsRemaining = round_duration_seconds;
+                movesRemaining = moves_per_round;
                 gameState = GameState::Waiting;
-                SetExitKey(KEY_ESCAPE);
             }
         }
         else if (gameState == GameState::Waiting){
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_UP)){
+            if (tapped || GetKeyPressed() != 0){
                 player.direction = {0,1,0};
                 player.move_forward();
+                audio.startMusic();
                 audio.play(SoundEffect::Portal);
                 roundStartedAt = now;
                 nextMoveAt = now + move_interval_seconds;
                 gameState = GameState::Playing;
+                SetExitKey(KEY_ESCAPE);
             }
         }
         else if (gameState == GameState::Playing){
             secondsRemaining = round_duration_seconds - (now-roundStartedAt);
-            if (secondsRemaining <= 0){
-                secondsRemaining = 0;
-                gameState = GameState::Dead;
-                SetExitKey(KEY_NULL); // Any key, including Escape, can retry after death.
-            }
-            else{
-                if (IsKeyPressed(KEY_RIGHT)){
+            if (secondsRemaining < 0) secondsRemaining = 0;
+            if (secondsRemaining > 0){
+                if (IsKeyPressed(KEY_RIGHT) || (tapped && !tappedLeft)){
                     player.turn_player(true);
                     audio.play(SoundEffect::Turn);
                 }
-                if (IsKeyPressed(KEY_LEFT)){
+                if (IsKeyPressed(KEY_LEFT) || tappedLeft){
                     player.turn_player(false);
                     audio.play(SoundEffect::Turn);
                 }
-                while (now >= nextMoveAt && gameState == GameState::Playing){
-                    switch (player.move_forward()) {
-                        case MoveResult::Moved: audio.play(SoundEffect::Move); break;
-                        case MoveResult::Blocked: audio.play(SoundEffect::Blocked); break;
-                        case MoveResult::Portal: audio.play(SoundEffect::Portal); break;
-                    }
-                    nextMoveAt += move_interval_seconds;
-                    if (player.current_block == endBlock) gameState = GameState::Won;
+            }
+            while (now >= nextMoveAt && movesRemaining > 0 && gameState == GameState::Playing){
+                switch (player.move_forward()) {
+                    case MoveResult::Moved: audio.play(SoundEffect::Move); break;
+                    case MoveResult::Blocked: audio.play(SoundEffect::Blocked); break;
+                    case MoveResult::Portal: audio.play(SoundEffect::Portal); break;
                 }
+                --movesRemaining;
+                nextMoveAt += move_interval_seconds;
+                if (player.current_block == endBlock){
+                    gameState = GameState::Won;
+                    audio.play(SoundEffect::Win);
+                }
+            }
+            if (secondsRemaining <= 0 && gameState == GameState::Playing){
+                movesRemaining = 0;
+                gameState = GameState::Dead;
+                SetExitKey(KEY_NULL); // Any key, including Escape, can retry after death.
             }
         }
 		// drawing
@@ -695,6 +710,9 @@ int main ()
 
 		// draw our texture to the screen
 		//DrawTexture(wabbit, 800, 200, RED);
+		const auto wallTextureFor = [](Block* block){
+		    return (block == startBlock || block == endBlock) ? Texture2D{} : face_texture;
+		};
 		Block* viewBlock = player.current_block;
 		for(int i=0; i < display_faces.size(); i++){
 		    const Direction face_direction = static_cast<Direction>(i % fpr);
@@ -722,7 +740,7 @@ int main ()
 			        Block* sideBlock = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, true))->getNextBlock();
 			        if (sideBlock != nullptr){
 			            if (face_direction == Direction::FrontLeft){
-			                display_faces[i].renderViewFace(sideBlock->get_face_from_dir(player.direction)->getFaceColor(), face_texture);
+			                display_faces[i].renderViewFace(sideBlock->get_face_from_dir(player.direction)->getFaceColor(), wallTextureFor(sideBlock));
 			            }
 			            else{
 			                face = sideBlock->get_face_from_dir(face_direction == Direction::RoofLeft ? up_direction : down_direction);
@@ -736,7 +754,7 @@ int main ()
 			        Block* sideBlock = viewBlock->get_face_from_dir(IntVector::rotateVectorZ(player.direction, false))->getNextBlock();
 			        if (sideBlock != nullptr){
 			            if (face_direction == Direction::FrontRight){
-			                display_faces[i].renderViewFace(sideBlock->get_face_from_dir(player.direction)->getFaceColor(), face_texture);
+			                display_faces[i].renderViewFace(sideBlock->get_face_from_dir(player.direction)->getFaceColor(), wallTextureFor(sideBlock));
 			            }
 			            else{
 			                face = sideBlock->get_face_from_dir(face_direction == Direction::RoofRight ? up_direction : down_direction);
@@ -747,7 +765,10 @@ int main ()
 			}
 
 			if (face != nullptr && face->getNextBlock()==nullptr){
-			    display_faces[i].renderViewFace(face->getFaceColor(), face_texture);
+			    const bool isWall = face_direction == Direction::Left ||
+			                        face_direction == Direction::Right ||
+			                        face_direction == Direction::Front;
+			    display_faces[i].renderViewFace(face->getFaceColor(), isWall ? wallTextureFor(viewBlock) : Texture2D{});
 			}
 
 			if (i % fpr == fpr-1){//finished processing faces in a ring
@@ -758,27 +779,33 @@ int main ()
 			}
 		}
 
-        for(int i=0; i < mazeBoardBlocks.size(); i++){
-            mazeBoardBlocks[i].pos.displayVector(1, mapOffset);
+        if (showMap){
+            for(int i=0; i < mazeBoardBlocks.size(); i++){
+                mazeBoardBlocks[i].pos.displayVector(1, mapOffset);
+            }
+            player.renderPlayer(mapOffset);
         }
-        player.renderPlayer(mapOffset);
 
         const int hundredthsRemaining = static_cast<int>(std::ceil(secondsRemaining*100));
         const char* countdown = TextFormat("%02d:%02d", hundredthsRemaining/100, hundredthsRemaining%100);
         DrawText(countdown, 12, 12, 32, WHITE);
+        const char* movesLeft = TextFormat("Moves: %02d", movesRemaining);
+        DrawText(movesLeft, screenWidth-12-MeasureText(movesLeft,32), 12, 32, WHITE);
 
         if (gameState == GameState::Waiting){
-            const char* text = "Click to Start";
-            DrawText(text, (screenWidth-MeasureText(text,32))/2, 96, 32, WHITE);
+            const char* firstLine = "Tap, Click or Press";
+            const char* secondLine = "Any Key to Start";
+            DrawText(firstLine, (screenWidth-MeasureText(firstLine,32))/2, 96, 32, BLACK);
+            DrawText(secondLine, (screenWidth-MeasureText(secondLine,32))/2, 136, 32, BLACK);
         }
         else if (gameState == GameState::Won){
             const char* text = "You Win";
-            DrawText(text, (screenWidth-MeasureText(text,48))/2, (screenHeight-48)/2, 48, WHITE);
+            DrawText(text, (screenWidth-MeasureText(text,48))/2, (screenHeight-48)/2, 48, BLACK);
         }
         else if (gameState == GameState::Dead){
             const char* text = "You Died";
             DrawText(text, (screenWidth-MeasureText(text,48))/2, (screenHeight-48)/2, 48, RED);
-            const char* retry = "Press any key to try again";
+            const char* retry = "Tap or press any key to try again";
             DrawText(retry, (screenWidth-MeasureText(retry,24))/2, screenHeight/2+40, 24, WHITE);
         }
 

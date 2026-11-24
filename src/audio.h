@@ -8,6 +8,7 @@ enum class SoundEffect {
     Turn,
     Blocked,
     Portal,
+    Win,
     Count
 };
 
@@ -19,6 +20,7 @@ public:
     GameAudio& operator=(const GameAudio&) = delete;
 
     void initialize();
+    void startMusic();
     void update();
     void play(SoundEffect effect);
     void setMuted(bool muted);

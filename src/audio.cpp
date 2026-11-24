@@ -2,20 +2,17 @@
 #include <string>
 
 namespace {
-// Reuse the CC0 samples already tracked with raylib until final audio is ready.
-#if defined(__EMSCRIPTEN__)
 constexpr const char* audioDirectory = "resources/audio/";
-#else
-constexpr const char* audioDirectory = "build/external/raylib-master/examples/audio/resources/";
-#endif
-constexpr const char* musicFilename = "country.mp3";
+constexpr const char* musicFilename = "music.mp3";
 constexpr std::array<const char*, static_cast<unsigned int>(SoundEffect::Count)> effectFilenames = {
-    "spring.wav", // Move
-    "coin.wav",   // Turn
-    "sound.wav",  // Blocked
-    "weird.wav"   // Portal
+    "move.wav",    // Move: metal footstep
+    "turn.wav",    // Turn
+    "blocked.wav", // Blocked: shield slam
+    "portal.wav",  // Portal
+    "win.wav"      // Win: achievement unlocked
 };
 constexpr float musicVolume = 0.25f;
+constexpr float musicSpeed = 2.0f/3.0f;
 constexpr float effectsVolume = 0.5f;
 }
 
@@ -37,7 +34,7 @@ void GameAudio::initialize()
         if (IsMusicValid(music_)) {
             music_.looping = true;
             SetMusicVolume(music_, musicVolume);
-            PlayMusicStream(music_);
+            SetMusicPitch(music_, musicSpeed);
         }
     } else {
         TraceLog(LOG_WARNING, "Optional music file missing: %s", musicPath.c_str());
@@ -51,6 +48,13 @@ void GameAudio::initialize()
         } else {
             TraceLog(LOG_WARNING, "Optional sound file missing: %s", effectPath.c_str());
         }
+    }
+}
+
+void GameAudio::startMusic()
+{
+    if (ready_ && IsMusicValid(music_) && !IsMusicStreamPlaying(music_)) {
+        PlayMusicStream(music_);
     }
 }
 

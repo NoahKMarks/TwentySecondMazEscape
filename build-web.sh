@@ -13,7 +13,7 @@ if ! command -v emcc >/dev/null 2>&1; then
 fi
 
 raylib_src="$PWD/build/external/raylib-master/src"
-audio_resources="$PWD/build/external/raylib-master/examples/audio/resources"
+audio_resources="$PWD/resources/audio"
 mkdir -p .web-build dist/web
 
 # Web objects live separately from the existing desktop builds.
@@ -28,11 +28,7 @@ em++ src/*.cpp .web-build/libraylib.a \
     -std=c++20 -Os -DPLATFORM_WEB -I"$raylib_src" \
     -sUSE_GLFW=3 -sALLOW_MEMORY_GROWTH=1 \
     -sGL_ENABLE_GET_PROC_ADDRESS=1 \
-    --preload-file "$audio_resources/country.mp3@resources/audio/country.mp3" \
-    --preload-file "$audio_resources/spring.wav@resources/audio/spring.wav" \
-    --preload-file "$audio_resources/coin.wav@resources/audio/coin.wav" \
-    --preload-file "$audio_resources/sound.wav@resources/audio/sound.wav" \
-    --preload-file "$audio_resources/weird.wav@resources/audio/weird.wav" \
+    --preload-file "$audio_resources@resources/audio" \
     --shell-file web/shell.html -o dist/web/index.html
 
 python3 - <<'PY'
@@ -42,7 +38,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 with ZipFile("dist/TwentySecondMazEscape-web.zip", "w", ZIP_DEFLATED) as archive:
     for name in ("index.html", "index.js", "index.wasm", "index.data"):
         archive.write(Path("dist/web") / name, name)
-    archive.write("build/external/raylib-master/examples/audio/resources/LICENSE.md", "audio-LICENSE.md")
+    archive.write("resources/audio/LICENSE.md", "audio-LICENSE.md")
 print("Web build: dist/web/index.html")
 print("itch.io ZIP: dist/TwentySecondMazEscape-web.zip")
 PY
