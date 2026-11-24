@@ -51,19 +51,19 @@ const bool use_textures = false; // Set false for flat face colours.
 
 const float map_scale = 30;
 constexpr double move_interval_seconds = 2.0;
-constexpr double round_duration_seconds = 20.0;
-static_assert(move_interval_seconds > 0);
-constexpr int moves_per_round = static_cast<int>(round_duration_seconds/move_interval_seconds);
 
-//maze genaration
-//
-const int maze_steps = 9; // The final room adds the tenth timed move.
+//Timing variables
+const double gameLength = 20.0;
+const maze_steps = 10;
+constepr move_time = gameLength/moveCount
+static_assert(maze_steps > 0);
+static_assert(gameLength) > 0);
 
 const int turn_rate = 3; //chance to make a turn in correct maze path per step
 const int portal_rate = 6; //chance to attempt to spawn a portal is 1/portal_rate
 
 // Order matches the eleven faces generated for each ring.
-enum class Direction {
+enum class Direction { // in future rename roof or top to be consistant
     Bottom,
     Right,
     Top,
@@ -111,7 +111,7 @@ struct IntVector{
 
     static IntVector rotateVectorZ(IntVector v, bool anticlockwise){
       if (anticlockwise){
-        IntVector result(v.y,-+v.x,v.z);
+        IntVector result(v.y,-v.x,v.z);
         return result;
       }
       else{
@@ -119,6 +119,7 @@ struct IntVector{
         return result;
       }
     }
+    /*
     static IntVector rotateVectorX(IntVector v, bool anticlockwise){
       if (anticlockwise){
         IntVector result(v.y,-+v.x,v.z);
@@ -129,6 +130,7 @@ struct IntVector{
         return result;
       }
     }
+    */
     //make versions for other direction rotations
 
 
@@ -170,7 +172,6 @@ std::ostream& operator<<(std::ostream& os,const IntVector v) {
 
 void drawLinesFromPoints(const Vector2 (&points)[4]){
     for (int i = 0; i<4; i++){
-
 		    DrawLineV(points[i%4], points[(i+1)%4], LIME);
 	}
 }
@@ -300,12 +301,12 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
                 up_dist = 1/2;
             }
 
-      		//calculate faces Lighting Factor
-      		float factored_distance_squared = (light_scale*light_scale)*(forward_dist*forward_dist + side_dist*side_dist+up_dist*up_dist);
-      		float lightFactor = 1.0f/(1.0f+factored_distance_squared);
-      		//std::cout << "row_num: " <<row_num<< "  |  face_num: "<< i << " |  lightFactor: "<< lightFactor << "\n";
-      		//adds Face
-			displayFaces.emplace_back(zone_points, (float)(lightFactor), point_count);
+      		  //calculate faces Lighting Factor
+      		  float factored_distance_squared = (light_scale*light_scale)*(forward_dist*forward_dist + side_dist*side_dist+up_dist*up_dist);
+      		  float lightFactor = 1.0f/(1.0f+factored_distance_squared);
+      		  //std::cout << "row_num: " <<row_num<< "  |  face_num: "<< i << " |  lightFactor: "<< lightFactor << "\n";
+      		  //adds Face
+			      displayFaces.emplace_back(zone_points, (float)(lightFactor), point_count);
 	    }
 	}
 	return displayFaces;
@@ -328,7 +329,7 @@ class Face{
             std::mt19937 rng(dev());
             std::uniform_real_distribution<float> random(0.0f, 1.0f);
 
-            float hue = random(rng)*360.0f;
+            float hue = random(rng)*360.0f; //Check this
             float saturation = random(rng)*0.1f;
 
             color = ColorFromHSV(hue, saturation, 0.82f);
@@ -358,60 +359,35 @@ class Face{
 class Block{
     private:
 		std::unordered_map<IntVector, Face> direction_to_face;
-
-        //Face back2;
-        //Face front3;
-        //Face left4;
-        //Face right1;
-        //Face bottom5;
-        //Face top0;
-
     public:
         int blockID;
         IntVector pos;
 
         Block(int block_id = 0)
-        :
-        pos(0,0,0),
-        blockID(block_id)
-        //    back2(nullptr),
-        //    front3(nullptr),
-        //    left4(nullptr),
-        //    right1(nullptr),
-        //    bottom5(nullptr),
-        //    top0(nullptr),
+          :
+          pos(0,0,0),
+          blockID(block_id)
         {
-            direction_to_face.reserve(6);
-			direction_to_face[IntVector{1,0,0}] = Face();
-			direction_to_face[IntVector{-1,0,0}] = Face();
-			direction_to_face[IntVector{0,1,0}] = Face();
-			direction_to_face[IntVector{0,-1,0}] = Face();
+          direction_to_face.reserve(6);
+    			direction_to_face[IntVector{1,0,0}] = Face();
+    			direction_to_face[IntVector{-1,0,0}] = Face();
+    			direction_to_face[IntVector{0,1,0}] = Face();
+    			direction_to_face[IntVector{0,-1,0}] = Face();
 
-			direction_to_face[IntVector{0,0,1}] = Face();
-			direction_to_face[IntVector{0,0,-1}] = Face();
-		}
+    			direction_to_face[IntVector{0,0,1}] = Face();
+    			direction_to_face[IntVector{0,0,-1}] = Face();
+  		  }
 
         Face* get_face_from_dir(IntVector dir){
-/*
-            std::cout << dir << "\n";
-
-            std::cout << &direction_to_face[IntVector{1,0,0}] << "\n";
-			std::cout << &direction_to_face[IntVector{-1,0,0}] << "\n";
-			std::cout << &direction_to_face[IntVector{0,1,0}] << "\n";
-			std::cout << &direction_to_face[IntVector{0,-1,0}] << "\n";
-			std::cout << &direction_to_face[IntVector{0,0,1}] << "\n";
-			std::cout << &direction_to_face[IntVector{0,0,-1}] << "\n";
-*/
-			return &(direction_to_face[dir]);
+			       return &(direction_to_face[dir]);
         }
 
-		Block* get_next_block(IntVector dir){
+		    Block* get_next_block(IntVector dir){
             Face* next_face = get_face_from_dir(dir);
-            //std::cout << "next face " << next_face << " \n";
-			return (*next_face).getNextBlock();
-		}
+            return (*next_face).getNextBlock();
+		    }
 
-        int add_connection(Block *toBlock, IntVector dir, bool is_portal = false){
+        int add_connection(Block *toBlock, IntVector dir, bool is_portal = true){
             Face& next_face = *(get_face_from_dir(dir));
             if (next_face.getNextBlock() == nullptr){
                 std::cout << "connecting \n";
@@ -423,9 +399,9 @@ class Block{
             }
         }
 
-		bool operator==(const Block& other) const {
-            return blockID == other.blockID;
-        }
+  		bool operator==(const Block& other) const {
+        return blockID == other.blockID;
+      }
 };
 
 
@@ -450,10 +426,9 @@ std::vector<Block> makeMazeBoard(){
 
         block_array.emplace_back(block_num);//use block_num as its ID
         new_block = &block_array[block_num];
-        new_block->get_face_from_dir(IntVector{0,0,1})->setColorOverride(GetColor(0x455B61FF));
+        new_block->get_face_from_dir(IntVector{0,0,1})->setColorOverride(GetColor(0x455B61FF));//Set roof and floor colors
         new_block->get_face_from_dir(IntVector{0,0,-1})->setColorOverride(GetColor(0x806F5BFF));
         new_block->pos = position;
-
         block_num++;
 
         // connect blocks
@@ -462,20 +437,17 @@ std::vector<Block> makeMazeBoard(){
             prev_block->add_connection(new_block, direction);
         }
 
-        // add to dictionary
-        //positions_to_blocks[position] = new_block;
         IntVector in_direction = direction;
-        //change direction (and maybe make it an enum or int instead of vector)
         bool shouldTurn = randomBool();
         bool isRight = randomBool();
         if (shouldTurn && isRight && can_turn_right){
-			direction = IntVector::rotateVectorZ(direction,false);
-			can_turn_left = false;
-		}
-		else if(shouldTurn && !isRight && can_turn_left){
-		    direction = IntVector::rotateVectorZ(direction,true);
-			can_turn_right = false;
-		}
+			        direction = IntVector::rotateVectorZ(direction,false);
+			        can_turn_left = false;
+		    }
+		    else if(shouldTurn && !isRight && can_turn_left){
+		          direction = IntVector::rotateVectorZ(direction,true);
+			        can_turn_right = false;
+		    }
         else {
             can_turn_left = true;
             can_turn_right = true;
@@ -498,21 +470,18 @@ std::vector<Block> makeMazeBoard(){
             if (randomInteger(0, portal_rate)==0 and has_place){
                 // A portal connection uses its own movement sound.
                 new_block->add_connection(&block_array[i], portal_dir, true);
+                block_array[i].add_connection(new_block, portal_dir.reverseVector(), false)// cannot go through this portal backwards
             }
         }
-
-
-        //IntVector return_portal_dir = IntVector::reverseVector(portal_dir)
-
-
-
+        //generate next block
         position = IntVector::addIntVector(position,direction);
         steps_to_finish --;
     }
 
     // Add the endpoint rooms after all random portals have been generated.
     Block* final_block = new_block;
-    block_array.emplace_back(block_num++);
+    block_array.emplace_back(block_num);
+    block_num++;
     Block* end_block = &block_array.back();
     end_block->pos = position;
     final_block->add_connection(end_block, direction);
@@ -522,56 +491,51 @@ std::vector<Block> makeMazeBoard(){
     IntVector start_direction{0,1,0};
     start_block->pos = IntVector::addIntVector(block_array.front().pos, start_direction.reverseVector());
     start_block->add_connection(&block_array.front(), start_direction, true);
-
+    std::cout << "start is : " << start_block->position;
     const IntVector room_directions[] = {{1,0,0}, {-1,0,0}, {0,1,0}, {0,-1,0}, {0,0,1}, {0,0,-1}};
+
+    //setting start and ends custom colors
     for (IntVector room_direction : room_directions){
         start_block->get_face_from_dir(room_direction)->setColorOverride(GetColor(0xBCB782FF));
         end_block->get_face_from_dir(room_direction)->setColorOverride(GetColor(0xDDBC58FF));
     }
     start_block->get_face_from_dir({0,0,-1})->setColorOverride(GetColor(0x776131FF));
 
-    for (const Block& block : block_array){
-        //std::cout << " pos " << block.pos << "\n";
-		;
-    }
-
         std::cout << "done \n";
-	return block_array;
-
+	  return block_array;
 }
 
-enum class MoveResult { Blocked, Moved, Portal };
-enum class GameState { Waiting, Playing, Won, Dead };
+enum class MoveResult { Blocked, Moved, Portal};
+enum class GameState { Waiting, Playing, Won, Dead};
 
 class Player{
   public:
     IntVector direction;
-	//IntVector position;
-	Block* current_block;// pointer to block in maze
+	  Block* current_block;// pointer to block in maze
 
     Player(Block* start_block)
-	:
+	  :
 		current_block(start_block),
 		direction{0,1,0}
 		//position{0,0,0}
-	{}
-	void renderPlayer(Vector2 draw_offset = screenCentre){
-		IntVector position = (*current_block).pos;
-        //std::cout << position << "\n";
-		Vector2 scaledPos(position.x*map_scale, position.y*map_scale);
-        Vector2 drawpos = Vector2Add(draw_offset, scaledPos);
-        DrawCircleV(drawpos, 0.75*map_scale/2, RED);
+	  {}
 
-        Vector2 headOffset(direction.x*map_scale/2, direction.y*map_scale/2);
+  void renderPlayer(Vector2 draw_offset = screenCentre){
+		IntVector position = (*current_block).pos;
+  	Vector2 scaledPos(position.x*map_scale, position.y*map_scale);
+    Vector2 drawpos = Vector2Add(draw_offset, scaledPos);
+    DrawCircleV(drawpos, 0.75*map_scale/2, RED);
+    Vector2 headOffset(direction.x*map_scale/2, direction.y*map_scale/2);
 		Vector2 head_pos = Vector2Add(drawpos,headOffset);
 		DrawCircleV(head_pos, 0.5*map_scale/2, BLUE);
-	}
-	void turn_player(bool is_right){
+	 }
+	 void turn_player(bool is_right){
 	    direction = IntVector::rotateVectorZ(direction, !is_right);
-	}
-	MoveResult move_forward(){
-		Face* exit_face = current_block->get_face_from_dir(direction);
-		Block* next_block = exit_face->getNextBlock();
+	 }
+
+    MoveResult move_forward(){
+  		Face* exit_face = current_block->get_face_from_dir(direction);
+  		Block* next_block = exit_face->getNextBlock();
         std::cout << "current block : "<< current_block << "\n";
 		if (next_block != nullptr){
             std::cout << "moving \n";
@@ -625,6 +589,7 @@ int main ()
 	static Block* startBlock = &mazeBoardBlocks.back();
 	static Block* endBlock = &mazeBoardBlocks[mazeBoardBlocks.size()-2];
 	static Player player(startBlock);
+
 	static GameState gameState = GameState::Waiting;
 	static double secondsRemaining = round_duration_seconds;
 	static int movesRemaining = moves_per_round;
@@ -642,6 +607,7 @@ int main ()
 	{
         if (IsKeyPressed(KEY_X)) showMap = !showMap;
         if (IsKeyPressed(KEY_M)) audio.toggleMute();
+
         audio.update();
         const double now = GetTime();
         // Raylib maps the primary touch to the left mouse button.
@@ -684,7 +650,7 @@ int main ()
                 switch (player.move_forward()) {
                     case MoveResult::Moved: audio.play(SoundEffect::Move); break;
                     case MoveResult::Blocked: audio.play(SoundEffect::Blocked); break;
-                    case MoveResult::Portal: audio.play(SoundEffect::Portal); break;
+                    case MoveResult::Portal: audio.play(SoundEffect::Move); break;
                 }
                 --movesRemaining;
                 nextMoveAt += move_interval_seconds;
@@ -714,6 +680,7 @@ int main ()
 		    return (block == startBlock || block == endBlock) ? Texture2D{} : face_texture;
 		};
 		Block* viewBlock = player.current_block;
+    //loop through all possible face directions and check if the
 		for(int i=0; i < display_faces.size(); i++){
 		    const Direction face_direction = static_cast<Direction>(i % fpr);
 		    Face* face = nullptr;

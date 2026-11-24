@@ -212,7 +212,7 @@ obj/x64/Debug/mazescape/main.o: src/main.cpp /usr/include/stdc-predef.h \
  /usr/include/c++/13/bits/ranges_algo.h \
  /usr/include/c++/13/bits/ranges_algobase.h \
  /usr/include/c++/13/pstl/glue_algorithm_defs.h src/block.cpp \
- src/board.cpp
+ src/board.cpp src/audio.h /usr/include/c++/13/array
 /usr/include/stdc-predef.h:
 build/external/raylib-master/src/raylib.h:
 /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h:
@@ -477,3 +477,5 @@ build/external/raylib-master/src/rlgl.h:
 /usr/include/c++/13/pstl/glue_algorithm_defs.h:
 src/block.cpp:
 src/board.cpp:
+src/audio.h:
+/usr/include/c++/13/array:
