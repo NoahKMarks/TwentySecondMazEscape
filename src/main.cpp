@@ -53,14 +53,15 @@ const float map_scale = 30;
 constexpr double move_interval_seconds = 2.0;
 
 //Timing variables
-const double gameLength = 20.0;
-const maze_steps = 10;
-constepr move_time = gameLength/moveCount
-static_assert(maze_steps > 0);
-static_assert(gameLength) > 0);
+constexpr double gameLength = 20.0;
+constexpr int maze_steps = 10;
+constexpr double move_time = gameLength/maze_steps;
 
 const int turn_rate = 3; //chance to make a turn in correct maze path per step
 const int portal_rate = 6; //chance to attempt to spawn a portal is 1/portal_rate
+
+std::random_device rd;
+std::mt19937 randgen(rd());
 
 // Order matches the eleven faces generated for each ring.
 enum class Direction { // in future rename roof or top to be consistant
@@ -312,7 +313,6 @@ std::vector<ViewFace> generateDisplay(const int tunnel_depth){
 	return displayFaces;
 }
 
-
 class Block; //Forward declaration so face knows it exists and can point to it
 class Face{
 	private:
@@ -390,7 +390,7 @@ class Block{
         int add_connection(Block *toBlock, IntVector dir, bool is_portal = true){
             Face& next_face = *(get_face_from_dir(dir));
             if (next_face.getNextBlock() == nullptr){
-                std::cout << "connecting \n";
+                //std::cout << "connecting \n";
                 next_face.setNextBlock(toBlock, is_portal);
                 return 0;
             }
@@ -406,7 +406,7 @@ class Block{
 
 
 std::vector<Block> makeMazeBoard(){
-    int steps_to_finish = maze_steps+1;
+    int steps_to_finish = maze_steps;
     IntVector position = {0, 0, 0}; //Just used for visualisation Not actual game
     IntVector direction = {1, 0, 0};
     bool can_turn_left = true;
@@ -443,14 +443,16 @@ std::vector<Block> makeMazeBoard(){
         if (shouldTurn && isRight && can_turn_right){
 			        direction = IntVector::rotateVectorZ(direction,false);
 			        can_turn_left = false;
+              can_turn_right = false;
 		    }
 		    else if(shouldTurn && !isRight && can_turn_left){
 		          direction = IntVector::rotateVectorZ(direction,true);
 			        can_turn_right = false;
+              //can_turn_left = false;
 		    }
         else {
             can_turn_left = true;
-            can_turn_right = true;
+            //can_turn_right = true;
         }
 
         //RANDOMLY ADD PORTAL ON ONE SIDE TO PREVIOUS BLOCK
@@ -465,12 +467,18 @@ std::vector<Block> makeMazeBoard(){
         int index = randomInteger(0, static_cast<int>(directions.size()) - 1);
         IntVector portal_dir = directions[index];
 
-        for (int i=0; i<block_array.size()-1; i++){
+        int ind[block_array.size()-1];
+        std::iota(ind, ind + block_array.size()-1, 0);
+        std::cout << ind[0] <<ind[1] <<ind[2] << "\n";
+        std::shuffle(ind, ind + block_array.size()-1, randgen);
+        std::cout << ind[0] <<ind[1] <<ind[2] << "\n";
+
+        for (int i : ind){
             bool has_place = (block_array[i].get_face_from_dir(portal_dir.reverseVector())->getNextBlock()==nullptr);
             if (randomInteger(0, portal_rate)==0 and has_place){
                 // A portal connection uses its own movement sound.
                 new_block->add_connection(&block_array[i], portal_dir, true);
-                block_array[i].add_connection(new_block, portal_dir.reverseVector(), false)// cannot go through this portal backwards
+                //block_array[i].add_connection(new_block, portal_dir.reverseVector(), false);// cannot go through this portal backwards
             }
         }
         //generate next block
@@ -491,7 +499,7 @@ std::vector<Block> makeMazeBoard(){
     IntVector start_direction{0,1,0};
     start_block->pos = IntVector::addIntVector(block_array.front().pos, start_direction.reverseVector());
     start_block->add_connection(&block_array.front(), start_direction, true);
-    std::cout << "start is : " << start_block->position;
+    //std::cout << "start is : " << start_block->pos;
     const IntVector room_directions[] = {{1,0,0}, {-1,0,0}, {0,1,0}, {0,-1,0}, {0,0,1}, {0,0,-1}};
 
     //setting start and ends custom colors
@@ -501,12 +509,12 @@ std::vector<Block> makeMazeBoard(){
     }
     start_block->get_face_from_dir({0,0,-1})->setColorOverride(GetColor(0x776131FF));
 
-        std::cout << "done \n";
+        //std::cout << "done \n";
 	  return block_array;
 }
 
-enum class MoveResult { Blocked, Moved, Portal};
-enum class GameState { Waiting, Playing, Won, Dead};
+enum class MoveResult {Blocked, Moved, Portal};
+enum class GameState {Waiting, Playing, Won, Dead};
 
 class Player{
   public:
@@ -536,14 +544,13 @@ class Player{
     MoveResult move_forward(){
   		Face* exit_face = current_block->get_face_from_dir(direction);
   		Block* next_block = exit_face->getNextBlock();
-        std::cout << "current block : "<< current_block << "\n";
 		if (next_block != nullptr){
-            std::cout << "moving \n";
+            //std::cout << "moving \n";
 			current_block = next_block;
 			return exit_face->isPortal() ? MoveResult::Portal : MoveResult::Moved;
 		}
 		else{
-            std::cout << "blocked \n";
+            //std::cout << "blocked \n";
         }
 		return MoveResult::Blocked;
 	}
@@ -591,10 +598,11 @@ int main ()
 	static Player player(startBlock);
 
 	static GameState gameState = GameState::Waiting;
-	static double secondsRemaining = round_duration_seconds;
-	static int movesRemaining = moves_per_round;
+	static double secondsRemaining = gameLength;
+	static int movesRemaining = maze_steps;
 	static double roundStartedAt = 0;
 	static double nextMoveAt = 0;
+
 	static const IntVector up_direction{0,0,1};
 	static const IntVector down_direction{0,0,-1};
 
@@ -616,8 +624,8 @@ int main ()
         if (gameState == GameState::Dead){
             if (tapped || GetKeyPressed() != 0){
                 player = Player(startBlock);
-                secondsRemaining = round_duration_seconds;
-                movesRemaining = moves_per_round;
+                secondsRemaining = gameLength;
+                movesRemaining = maze_steps;
                 gameState = GameState::Waiting;
             }
         }
@@ -634,7 +642,7 @@ int main ()
             }
         }
         else if (gameState == GameState::Playing){
-            secondsRemaining = round_duration_seconds - (now-roundStartedAt);
+            secondsRemaining = gameLength - (now-roundStartedAt);
             if (secondsRemaining < 0) secondsRemaining = 0;
             if (secondsRemaining > 0){
                 if (IsKeyPressed(KEY_RIGHT) || (tapped && !tappedLeft)){
@@ -670,7 +678,6 @@ int main ()
 
 		// Setup the back buffer for drawing (clear color and depth buffers)
 		ClearBackground(BLACK);
-
 		// draw some text using the default font
 		//DrawText("Hello Raylib, Hello Noah", 200,200,20,LIME);
 
@@ -787,10 +794,6 @@ int main ()
 #else
 	while (!WindowShouldClose()) updateFrame();
 #endif
-
-	// cleanup
-	// unload our texture so it can be cleaned up
-	//UnloadTexture(wabbit);
 
 	// destroy the window and cleanup the OpenGL context
 	if (face_texture.id != 0) UnloadTexture(face_texture);
