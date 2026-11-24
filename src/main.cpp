@@ -9,6 +9,7 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 
 #include "raylib.h"
 #include "raymath.h"
+#include <cmath>
 #if defined(__EMSCRIPTEN__)
 #include <emscripten/emscripten.h>
 #endif
@@ -49,6 +50,9 @@ const float light_scale = block_separation/light_factor;
 const bool use_textures = false; // Set false for flat face colours.
 
 const float map_scale = 30;
+constexpr double move_interval_seconds = 1.0;
+constexpr double round_duration_seconds = 20.0;
+static_assert(move_interval_seconds > 0);
 
 //maze genaration
 //
@@ -536,6 +540,7 @@ std::vector<Block> makeMazeBoard(){
 }
 
 enum class MoveResult { Blocked, Moved, Portal };
+enum class GameState { Waiting, Playing, Won, Dead };
 
 class Player{
   public:
@@ -618,6 +623,10 @@ int main ()
 	static Block* startBlock = &mazeBoardBlocks.back();
 	static Block* endBlock = &mazeBoardBlocks[mazeBoardBlocks.size()-2];
 	static Player player(startBlock);
+	static GameState gameState = GameState::Waiting;
+	static double secondsRemaining = round_duration_seconds;
+	static double roundStartedAt = 0;
+	static double nextMoveAt = 0;
 	static const IntVector up_direction{0,0,1};
 	static const IntVector down_direction{0,0,-1};
 
@@ -629,26 +638,50 @@ int main ()
 	{
         if (IsKeyPressed(KEY_M)) audio.toggleMute();
         audio.update();
-        if (player.current_block != endBlock){
-            if (IsKeyPressed(KEY_RIGHT)){
-                player.turn_player(true);
-                audio.play(SoundEffect::Turn);
-                std::cout << "right \n";
+        const double now = GetTime();
+        if (gameState == GameState::Dead){
+            if (GetKeyPressed() != 0){
+                player = Player(startBlock);
+                secondsRemaining = round_duration_seconds;
+                gameState = GameState::Waiting;
+                SetExitKey(KEY_ESCAPE);
             }
-            if (IsKeyPressed(KEY_LEFT)){
-                player.turn_player(false);
-                audio.play(SoundEffect::Turn);
-                std::cout << "left \n";
+        }
+        else if (gameState == GameState::Waiting){
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_UP)){
+                player.direction = {0,1,0};
+                player.move_forward();
+                audio.play(SoundEffect::Portal);
+                roundStartedAt = now;
+                nextMoveAt = now + move_interval_seconds;
+                gameState = GameState::Playing;
             }
-            const bool clickedStart = player.current_block == startBlock && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-            if (clickedStart || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_UP)){
-                if (clickedStart) player.direction = {0,1,0};
-                switch (player.move_forward()) {
-                    case MoveResult::Moved: audio.play(SoundEffect::Move); break;
-                    case MoveResult::Blocked: audio.play(SoundEffect::Blocked); break;
-                    case MoveResult::Portal: audio.play(SoundEffect::Portal); break;
+        }
+        else if (gameState == GameState::Playing){
+            secondsRemaining = round_duration_seconds - (now-roundStartedAt);
+            if (secondsRemaining <= 0){
+                secondsRemaining = 0;
+                gameState = GameState::Dead;
+                SetExitKey(KEY_NULL); // Any key, including Escape, can retry after death.
+            }
+            else{
+                if (IsKeyPressed(KEY_RIGHT)){
+                    player.turn_player(true);
+                    audio.play(SoundEffect::Turn);
                 }
-                std::cout << "forwards \n";
+                if (IsKeyPressed(KEY_LEFT)){
+                    player.turn_player(false);
+                    audio.play(SoundEffect::Turn);
+                }
+                while (now >= nextMoveAt && gameState == GameState::Playing){
+                    switch (player.move_forward()) {
+                        case MoveResult::Moved: audio.play(SoundEffect::Move); break;
+                        case MoveResult::Blocked: audio.play(SoundEffect::Blocked); break;
+                        case MoveResult::Portal: audio.play(SoundEffect::Portal); break;
+                    }
+                    nextMoveAt += move_interval_seconds;
+                    if (player.current_block == endBlock) gameState = GameState::Won;
+                }
             }
         }
 		// drawing
@@ -730,13 +763,23 @@ int main ()
         }
         player.renderPlayer(mapOffset);
 
-        if (player.current_block == startBlock){
+        const int hundredthsRemaining = static_cast<int>(std::ceil(secondsRemaining*100));
+        const char* countdown = TextFormat("%02d:%02d", hundredthsRemaining/100, hundredthsRemaining%100);
+        DrawText(countdown, 12, 12, 32, WHITE);
+
+        if (gameState == GameState::Waiting){
             const char* text = "Click to Start";
             DrawText(text, (screenWidth-MeasureText(text,32))/2, 96, 32, WHITE);
         }
-        else if (player.current_block == endBlock){
+        else if (gameState == GameState::Won){
             const char* text = "You Win";
             DrawText(text, (screenWidth-MeasureText(text,48))/2, (screenHeight-48)/2, 48, WHITE);
+        }
+        else if (gameState == GameState::Dead){
+            const char* text = "You Died";
+            DrawText(text, (screenWidth-MeasureText(text,48))/2, (screenHeight-48)/2, 48, RED);
+            const char* retry = "Press any key to try again";
+            DrawText(retry, (screenWidth-MeasureText(retry,24))/2, screenHeight/2+40, 24, WHITE);
         }
 
 		// end the frame and get ready for the next one  (display frame, poll input, etc...)
