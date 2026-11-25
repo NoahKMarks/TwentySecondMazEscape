@@ -50,18 +50,19 @@ const float light_scale = block_separation/light_factor;
 const bool use_textures = false; // Set false for flat face colours.
 
 const float map_scale = 30;
-constexpr double move_interval_seconds = 2.0;
 
 //Timing variables
 constexpr double gameLength = 20.0;
 constexpr int maze_steps = 10;
 constexpr double move_time = gameLength/maze_steps;
 
-const int turn_rate = 3; //chance to make a turn in correct maze path per step
-const int portal_rate = 6; //chance to attempt to spawn a portal is 1/portal_rate
+const int turn_rate = 2; //chance to make a turn in correct maze path per step
+const int portal_rate = 1; //chance to attempt to spawn a portal is 1/portal_rate
 
 std::random_device rd;
 std::mt19937 randgen(rd());
+
+bool cheatExplore = false;
 
 // Order matches the eleven faces generated for each ring.
 enum class Direction { // in future rename roof or top to be consistant
@@ -317,6 +318,7 @@ class Block; //Forward declaration so face knows it exists and can point to it
 class Face{
 	private:
 		Block* next_block;
+    bool is_barrier = false;
 		bool portal = false;
 		Color color;
 
@@ -338,10 +340,16 @@ class Face{
 		    color = col;
 		}
 
-		void setNextBlock(Block* to_block, bool is_portal = false){
+		void setNextBlock(Block* to_block, bool barrier = false){
 			next_block = to_block;
-			portal = is_portal;
+			is_barrier = is_barrier;
 		}
+    void setBarrier(bool on){
+      is_barrier = on;
+    }
+    bool hasBarrier(){
+      return is_barrier;
+    }
 
 		bool isPortal() const{
 			return portal;
@@ -387,11 +395,11 @@ class Block{
             return (*next_face).getNextBlock();
 		    }
 
-        int add_connection(Block *toBlock, IntVector dir, bool is_portal = true){
+        int add_connection(Block *toBlock, IntVector dir, bool is_barrier = false){
             Face& next_face = *(get_face_from_dir(dir));
             if (next_face.getNextBlock() == nullptr){
                 //std::cout << "connecting \n";
-                next_face.setNextBlock(toBlock, is_portal);
+                next_face.setNextBlock(toBlock, is_barrier);
                 return 0;
             }
             else{
@@ -415,8 +423,6 @@ std::vector<Block> makeMazeBoard(){
     std::vector<Block> block_array;
     block_array.reserve(steps_to_finish+2); // Keep existing links valid when adding the start and end rooms.
     //block_array.reserve(max_block_count);
-
-    //std::unordered_map<IntVector, Block*> positions_to_blocks;
 
     int block_num = 0;
     Block* prev_block = nullptr;
@@ -474,11 +480,14 @@ std::vector<Block> makeMazeBoard(){
         std::cout << ind[0] <<ind[1] <<ind[2] << "\n";
 
         for (int i : ind){
-            bool has_place = (block_array[i].get_face_from_dir(portal_dir.reverseVector())->getNextBlock()==nullptr);
+          bool has_place = (block_array[i].get_face_from_dir(portal_dir.reverseVector())->getNextBlock()==nullptr)
+                        && (block_array[i].get_face_from_dir(portal_dir)->getNextBlock()!=nullptr);
+
             if (randomInteger(0, portal_rate)==0 and has_place){
                 // A portal connection uses its own movement sound.
-                new_block->add_connection(&block_array[i], portal_dir, true);
-                //block_array[i].add_connection(new_block, portal_dir.reverseVector(), false);// cannot go through this portal backwards
+                new_block->add_connection(&block_array[i], portal_dir, false);
+                block_array[i].add_connection(new_block, portal_dir.reverseVector(), true);// cannot go through this portal backwards so make it have barrier
+
             }
         }
         //generate next block
@@ -543,16 +552,15 @@ class Player{
 
     MoveResult move_forward(){
   		Face* exit_face = current_block->get_face_from_dir(direction);
-  		Block* next_block = exit_face->getNextBlock();
-		if (next_block != nullptr){
-            //std::cout << "moving \n";
-			current_block = next_block;
-			return exit_face->isPortal() ? MoveResult::Portal : MoveResult::Moved;
-		}
-		else{
-            //std::cout << "blocked \n";
-        }
-		return MoveResult::Blocked;
+      if (!exit_face->hasBarrier()){
+        Block* next_block = exit_face->getNextBlock();
+  		    if (next_block != nullptr){
+              //std::cout << "moving \n";
+  			         current_block = next_block;
+  			            return exit_face->isPortal() ? MoveResult::Portal : MoveResult::Moved;
+  		    }
+      }
+		  return MoveResult::Blocked;
 	}
 };
 
@@ -615,7 +623,9 @@ int main ()
 	{
         if (IsKeyPressed(KEY_X)) showMap = !showMap;
         if (IsKeyPressed(KEY_M)) audio.toggleMute();
-
+        if (IsKeyPressed(KEY_N)) {
+          cheatExplore = true;
+        }
         audio.update();
         const double now = GetTime();
         // Raylib maps the primary touch to the left mouse button.
@@ -632,17 +642,20 @@ int main ()
         else if (gameState == GameState::Waiting){
             if (tapped || GetKeyPressed() != 0){
                 player.direction = {0,1,0};
-                player.move_forward();
+                player.move_forward();          secondsRemaining = 10000.0;
+
                 audio.startMusic();
                 audio.play(SoundEffect::Portal);
                 roundStartedAt = now;
-                nextMoveAt = now + move_interval_seconds;
+                nextMoveAt = now + move_time;
                 gameState = GameState::Playing;
                 SetExitKey(KEY_ESCAPE);
             }
         }
         else if (gameState == GameState::Playing){
-            secondsRemaining = gameLength - (now-roundStartedAt);
+            if (!cheatExplore){
+              secondsRemaining = gameLength - (now-roundStartedAt);
+            }
             if (secondsRemaining < 0) secondsRemaining = 0;
             if (secondsRemaining > 0){
                 if (IsKeyPressed(KEY_RIGHT) || (tapped && !tappedLeft)){
@@ -653,15 +666,19 @@ int main ()
                     player.turn_player(false);
                     audio.play(SoundEffect::Turn);
                 }
+                if (IsKeyPressed(KEY_ENTER) && cheatExplore){
+                    player.move_forward();
+
+                }
             }
-            while (now >= nextMoveAt && movesRemaining > 0 && gameState == GameState::Playing){
+            while (!cheatExplore && now >= nextMoveAt && movesRemaining > 0 && gameState == GameState::Playing){
                 switch (player.move_forward()) {
                     case MoveResult::Moved: audio.play(SoundEffect::Move); break;
                     case MoveResult::Blocked: audio.play(SoundEffect::Blocked); break;
                     case MoveResult::Portal: audio.play(SoundEffect::Move); break;
                 }
                 --movesRemaining;
-                nextMoveAt += move_interval_seconds;
+                nextMoveAt += move_time;
                 if (player.current_block == endBlock){
                     gameState = GameState::Won;
                     audio.play(SoundEffect::Win);
